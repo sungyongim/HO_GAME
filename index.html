@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>HO_GAME - Children's Games</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Nanum Pen Script', cursive;
+            background: linear-gradient(135deg, #fff8f0 0%, #f0f8ff 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            font-size: 56px;
+            color: #ff6b9d;
+            text-shadow: 3px 3px 0 #ffe66d;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 24px;
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .game-container {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .game-button {
+            width: 260px;
+            height: 140px;
+            border: none;
+            border-radius: 24px;
+            cursor: pointer;
+            font-family: 'Nanum Pen Script', cursive;
+            font-size: 36px;
+            color: white;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .game-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+        }
+
+        .game-button .desc {
+            font-size: 20px;
+            opacity: 0.9;
+        }
+
+        .btn-anipang {
+            background: linear-gradient(135deg, #87ceeb 0%, #6bb3d9 100%);
+            border: 4px solid #5ba3c9;
+        }
+
+        .btn-hotris {
+            background: linear-gradient(135deg, #ffa07a 0%, #ff8c5a 100%);
+            border: 4px solid #e07040;
+        }
+
+        #game-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: white;
+            border: 3px solid #ddd;
+            border-radius: 12px;
+            padding: 10px 20px;
+            font-family: 'Nanum Pen Script', cursive;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #f0f0f0;
+            border-color: #ccc;
+        }
+
+        /* Anipang Game Styles */
+        #anipang-game {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .score-display {
+            font-size: 32px;
+            color: #ff6b9d;
+            margin: 10px 0;
+        }
+
+        .timer-bar {
+            width: 100%;
+            max-width: 560px;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .timer-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #7ed321, #50c878);
+            transition: width 0.3s;
+        }
+
+        #anipang-board {
+            display: grid;
+            grid-template-columns: repeat(7, 70px);
+            grid-template-rows: repeat(7, 70px);
+            gap: 4px;
+            background: #fff5e6;
+            padding: 10px;
+            border-radius: 16px;
+            border: 4px solid #ffd4a3;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        }
+
+        .anipang-cell {
+            width: 70px;
+            height: 70px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            user-select: none;
+        }
+
+        .anipang-cell:hover {
+            transform: scale(1.08);
+        }
+
+        .anipang-cell.selected {
+            box-shadow: 0 0 0 4px #ffeb3b, 0 4px 15px rgba(255,235,59,0.5);
+            transform: scale(1.1);
+        }
+
+        .anipang-cell.matched {
+            animation: matchPop 0.3s ease-out;
+        }
+
+        @keyframes matchPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .anipang-cell.color-0 { background: #a8d8a8; }
+        .anipang-cell.color-1 { background: #a8c8e8; }
+        .anipang-cell.color-2 { background: #e8d8a0; }
+        .anipang-cell.color-3 { background: #d8b8e8; }
+        .anipang-cell.color-4 { background: #f0b8c8; }
+        .anipang-cell.color-5 { background: #e8c8a0; }
+
+        /* HOtris Game Styles */
+        #hotris-game {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #hotris-container {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+
+        #tetris-board {
+            display: grid;
+            grid-template-columns: repeat(8, 44px);
+            grid-template-rows: repeat(14, 44px);
+            gap: 2px;
+            background: #e8f4f8;
+            padding: 10px;
+            border-radius: 16px;
+            border: 4px solid #b8d4e8;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        }
+
+        .tetris-cell {
+            width: 44px;
+            height: 44px;
+            border-radius: 6px;
+            background: #f0f8ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .tetris-cell.filled {
+            border: 2px solid rgba(255,255,255,0.5);
+            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.1);
+        }
+
+        .tetris-cell.color-0 { background: #64b5f6; }
+        .tetris-cell.color-1 { background: #ffca28; }
+        .tetris-cell.color-2 { background: #ce93d8; }
+        .tetris-cell.color-3 { background: #ffb74d; }
+        .tetris-cell.color-4 { background: #80cbc4; }
+        .tetris-cell.color-5 { background: #ef9a9a; }
+        .tetris-cell.color-6 { background: #a5d6a7; }
+
+        .tetris-cell.ghost {
+            opacity: 0.3;
+        }
+
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 120px;
+        }
+
+        .next-preview {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 3px solid #b8e986;
+        }
+
+        .next-preview h3 {
+            font-size: 24px;
+            color: #7ed321;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        #next-piece {
+            display: grid;
+            grid-template-columns: repeat(4, 30px);
+            grid-template-rows: repeat(4, 30px);
+            gap: 1px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 6px;
+            margin: 0 auto;
+        }
+
+        .next-cell {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .next-cell.filled {
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        .next-cell.color-0 { background: #64b5f6; }
+        .next-cell.color-1 { background: #ffca28; }
+        .next-cell.color-2 { background: #ce93d8; }
+        .next-cell.color-3 { background: #ffb74d; }
+        .next-cell.color-4 { background: #80cbc4; }
+        .next-cell.color-5 { background: #ef9a9a; }
+        .next-cell.color-6 { background: #a5d6a7; }
+
+        .controls-info {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 3px solid #ffd93d;
+        }
+
+        .controls-info h3 {
+            font-size: 24px;
+            color: #f5a623;
+            margin-bottom: 10px;
+        }
+
+        .controls-info p {
+            font-size: 20px;
+            color: #666;
+            margin: 5px 0;
+        }
+
+        .key {
+            display: inline-block;
+            background: #ff6b9d;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 6px;
+            margin: 0 2px;
+            font-size: 16px;
+        }
+
+        .touch-controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .touch-btn {
+            width: 70px;
+            height: 70px;
+            border: none;
+            border-radius: 50%;
+            font-size: 32px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            transition: transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .touch-btn:active {
+            transform: scale(0.9);
+        }
+
+        .touch-btn.left { background: linear-gradient(135deg, #64b5f6, #42a5f5); color: white; }
+        .touch-btn.right { background: linear-gradient(135deg, #64b5f6, #42a5f5); color: white; }
+        .touch-btn.rotate { background: linear-gradient(135deg, #81c784, #66bb6a); color: white; }
+        .touch-btn.down { background: linear-gradient(135deg, #ffb74d, #ffa726); color: white; }
+        .touch-btn.drop { background: linear-gradient(135deg, #e57373, #ef5350); color: white; }
+
+        .encourage-text {
+            font-size: 36px;
+            color: #ff6b9d;
+            min-height: 45px;
+            text-align: center;
+        }
+
+        @keyframes encouragePop {
+            0% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0; transform: scale(1) translateY(-20px); }
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #ff6b9d 0%, #ff8e53 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 28px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Nanum Pen Script', cursive;
+            box-shadow: 0 5px 20px rgba(255,107,157,0.4);
+            transition: transform 0.2s;
+            margin-top: 20px;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-3px);
+        }
+
+        /* Game Over Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal h2 {
+            font-size: 48px;
+            color: #ff6b9d;
+            margin-bottom: 20px;
+        }
+
+        .modal p {
+            font-size: 32px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .hint {
+            font-size: 20px;
+            color: #999;
+            margin-top: 20px;
+        }
+
+        .combo-text {
+            position: fixed;
+            font-size: 48px;
+            font-weight: bold;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+            z-index: 50;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-50px) scale(1.2); }
+        }
+
+        /* Prevent scrolling/zooming on game boards */
+        #anipang-board,
+        #tetris-board {
+            touch-action: none;
+            -webkit-touch-callout: none;
+        }
+
+        .touch-controls {
+            touch-action: manipulation;
+        }
+
+        /* ============ Mobile Responsive (Galaxy S25 ~360px) ============ */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 36px;
+                margin-bottom: 5px;
+            }
+
+            .subtitle {
+                font-size: 18px;
+                margin-bottom: 15px;
+            }
+
+            .game-container {
+                gap: 20px;
+            }
+
+            .game-button {
+                width: 160px;
+                height: 100px;
+                font-size: 26px;
+                border-radius: 18px;
+                gap: 6px;
+            }
+
+            .game-button .desc {
+                font-size: 15px;
+            }
+
+            .back-btn {
+                padding: 8px 14px;
+                font-size: 16px;
+                top: 10px;
+                left: 10px;
+                z-index: 50;
+            }
+
+            .score-display {
+                font-size: 24px;
+                margin: 5px 0;
+            }
+
+            /* Anipang Mobile */
+            .timer-bar {
+                max-width: 340px;
+                height: 16px;
+            }
+
+            #anipang-board {
+                grid-template-columns: repeat(7, 46px);
+                grid-template-rows: repeat(7, 46px);
+                gap: 3px;
+                padding: 6px;
+                border-width: 3px;
+            }
+
+            .anipang-cell {
+                width: 46px;
+                height: 46px;
+                font-size: 26px;
+                border-radius: 8px;
+            }
+
+            /* HOtris Mobile */
+            #hotris-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+            }
+
+            #tetris-board {
+                grid-template-columns: repeat(8, 40px);
+                grid-template-rows: repeat(14, 40px);
+                gap: 1px;
+                padding: 6px;
+                border-width: 3px;
+            }
+
+            .tetris-cell {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+                border-radius: 5px;
+            }
+
+            .side-panel {
+                flex-direction: row;
+                min-width: auto;
+                gap: 15px;
+                justify-content: center;
+            }
+
+            .controls-info {
+                display: none;
+            }
+
+            .next-preview {
+                padding: 10px;
+            }
+
+            .next-preview h3 {
+                font-size: 20px;
+                margin-bottom: 6px;
+            }
+
+            #next-piece {
+                grid-template-columns: repeat(4, 24px);
+                grid-template-rows: repeat(4, 24px);
+                padding: 4px;
+            }
+
+            .next-cell {
+                width: 24px;
+                height: 24px;
+                font-size: 13px;
+            }
+
+            .touch-controls {
+                gap: 10px;
+                margin-top: 12px;
+            }
+
+            .touch-btn {
+                width: 62px;
+                height: 62px;
+                font-size: 28px;
+            }
+
+            .encourage-text {
+                font-size: 28px;
+                min-height: 35px;
+            }
+
+            .start-btn {
+                font-size: 22px;
+                padding: 12px 30px;
+                margin-top: 12px;
+            }
+
+            /* Modal Mobile */
+            .modal-content {
+                padding: 25px;
+                margin: 0 20px;
+            }
+
+            .modal h2 {
+                font-size: 36px;
+            }
+
+            .modal p {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+
+            .hint {
+                font-size: 16px;
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 380px) {
+            #anipang-board {
+                grid-template-columns: repeat(7, 42px);
+                grid-template-rows: repeat(7, 42px);
+                gap: 2px;
+                padding: 5px;
+            }
+
+            .anipang-cell {
+                width: 42px;
+                height: 42px;
+                font-size: 24px;
+            }
+
+            #tetris-board {
+                grid-template-columns: repeat(8, 36px);
+                grid-template-rows: repeat(14, 36px);
+            }
+
+            .tetris-cell {
+                width: 36px;
+                height: 36px;
+                font-size: 18px;
+            }
+
+            .touch-btn {
+                width: 56px;
+                height: 56px;
+                font-size: 24px;
+            }
+
+            .game-button {
+                width: 145px;
+                height: 90px;
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 HO_GAME</h1>
+    <p class="subtitle">다양한 게임을 즐기자!</p>
+
+    <div id="menu-screen" class="game-container">
+        <button class="game-button btn-anipang" onclick="startAnipang()">
+            🦕 HOpang
+            <span class="desc">공룡 매칭 게임</span>
+        </button>
+        <button class="game-button btn-hotris" onclick="startHOtris()">
+            🧱 HOtris
+            <span class="desc">테트리스 게임</span>
+        </button>
+    </div>
+
+    <div id="game-screen">
+        <button class="back-btn" onclick="goBack()">← 뒤로</button>
+
+        <!-- Anipang Game -->
+        <div id="anipang-game">
+            <div class="score-display">점수: <span id="anipang-score">0</span></div>
+            <div class="timer-bar">
+                <div class="timer-fill" id="timer-fill"></div>
+            </div>
+            <div id="anipang-board"></div>
+            <button class="start-btn" id="anipang-start-btn" onclick="startAnipangGame()">게임 시작!</button>
+        </div>
+
+        <!-- HOtris Game -->
+        <div id="hotris-game">
+            <div class="score-display">점수: <span id="tetris-score">0</span></div>
+            <div id="encourage-text" class="encourage-text"></div>
+            <div id="hotris-container">
+                <div id="tetris-board"></div>
+                <div class="side-panel">
+                    <div class="next-preview">
+                        <h3>다음 블록</h3>
+                        <div id="next-piece"></div>
+                    </div>
+                    <div class="controls-info">
+                        <h3>조작법</h3>
+                        <p><span class="key">←</span><span class="key">→</span> 이동</p>
+                        <p><span class="key">↓</span> 빠르게</p>
+                        <p><span class="key">↑</span> 회전</p>
+                        <p><span class="key">스페이스</span> 떨어뜨리기</p>
+                    </div>
+                </div>
+            </div>
+            <div class="touch-controls">
+                <button class="touch-btn left" id="btn-left">⬅️</button>
+                <button class="touch-btn rotate" id="btn-rotate">🔄</button>
+                <button class="touch-btn down" id="btn-down">⬇️</button>
+                <button class="touch-btn right" id="btn-right">➡️</button>
+                <button class="touch-btn drop" id="btn-drop">⏬</button>
+            </div>
+            <button class="start-btn" id="tetris-start-btn" onclick="startTetrisGame()">게임 시작!</button>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div class="modal" id="game-over-modal">
+        <div class="modal-content">
+            <h2 id="modal-title">게임 끝!</h2>
+            <p>점수: <span id="final-score">0</span></p>
+            <button class="start-btn" onclick="restartGame()">다시 하기 🔄</button>
+        </div>
+    </div>
+
+    <p class="hint" id="hint-text">버튼을 클릭해서 게임을 선택하세요!</p>
+
+    <script>
+        // ============ Anipang Game ============
+        const ANIPANG_COLS = 7;
+        const ANIPANG_ROWS = 7;
+        const ANIMAL_EMOJIS = ['🦕', '🦖', '🦎', '🐊', '🥚', '🦴'];
+
+        let anipangBoard = [];
+        let anipangScore = 0;
+        let anipangTimeLeft = 90;
+        let anipangTimer = null;
+        let anipangGameStarted = false;
+        let selectedCell = null;
+        let isAnimating = false;
+
+        function initAnipangBoard() {
+            const board = document.getElementById('anipang-board');
+            board.innerHTML = '';
+            anipangBoard = [];
+
+            for (let r = 0; r < ANIPANG_ROWS; r++) {
+                anipangBoard[r] = [];
+                for (let c = 0; c < ANIPANG_COLS; c++) {
+                    let choices = [];
+                    for (let i = 0; i < ANIMAL_EMOJIS.length; i++) choices.push(i);
+
+                    if (c >= 2 && anipangBoard[r][c-1] === anipangBoard[r][c-2]) {
+                        const val = anipangBoard[r][c-1];
+                        choices = choices.filter(x => x !== val);
+                    }
+                    if (r >= 2 && anipangBoard[r-1][c] === anipangBoard[r-2][c]) {
+                        const val = anipangBoard[r-1][c];
+                        choices = choices.filter(x => x !== val);
+                    }
+
+                    const val = choices[Math.floor(Math.random() * choices.length)];
+                    anipangBoard[r][c] = val;
+
+                    const cell = document.createElement('div');
+                    cell.className = `anipang-cell color-${val % 6}`;
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    cell.textContent = ANIMAL_EMOJIS[val];
+                    cell.onclick = () => handleAnipangClick(r, c);
+                    board.appendChild(cell);
+                }
+            }
+        }
+
+        function handleAnipangClick(row, col) {
+            if (!anipangGameStarted || isAnimating) return;
+
+            const cell = document.querySelector(`.anipang-cell[data-row="${row}"][data-col="${col}"]`);
+
+            if (!selectedCell) {
+                selectedCell = { row, col };
+                cell.classList.add('selected');
+            } else {
+                const prev = selectedCell;
+                selectedCell = null;
+                document.querySelectorAll('.anipang-cell.selected').forEach(c => c.classList.remove('selected'));
+
+                // Check if adjacent
+                const dr = Math.abs(prev.row - row);
+                const dc = Math.abs(prev.col - col);
+
+                if ((dr === 1 && dc === 0) || (dr === 0 && dc === 1)) {
+                    // Swap
+                    swapAnipangCells(prev.row, prev.col, row, col);
+                } else {
+                    // Select new
+                    selectedCell = { row, col };
+                    cell.classList.add('selected');
+                }
+            }
+        }
+
+        function swapAnipangCells(r1, c1, r2, c2) {
+            // Check if swap creates match
+            const temp = anipangBoard[r1][c1];
+            anipangBoard[r1][c1] = anipangBoard[r2][c2];
+            anipangBoard[r2][c2] = temp;
+
+            const matches = findAnipangMatches();
+
+            if (matches.length > 0) {
+                isAnimating = true;
+                updateAnipangDisplay();
+                setTimeout(() => removeAnipangMatches(matches), 150);
+            } else {
+                // Swap back
+                anipangBoard[r2][c2] = anipangBoard[r1][c1];
+                anipangBoard[r1][c1] = temp;
+            }
+        }
+
+        function findAnipangMatches() {
+            const matched = new Set();
+
+            // Horizontal
+            for (let r = 0; r < ANIPANG_ROWS; r++) {
+                for (let c = 0; c < ANIPANG_COLS - 2; c++) {
+                    const val = anipangBoard[r][c];
+                    if (val !== null && val === anipangBoard[r][c+1] && val === anipangBoard[r][c+2]) {
+                        matched.add(`${r},${c}`);
+                        matched.add(`${r},${c+1}`);
+                        matched.add(`${r},${c+2}`);
+                    }
+                }
+            }
+
+            // Vertical
+            for (let c = 0; c < ANIPANG_COLS; c++) {
+                for (let r = 0; r < ANIPANG_ROWS - 2; r++) {
+                    const val = anipangBoard[r][c];
+                    if (val !== null && val === anipangBoard[r+1][c] && val === anipangBoard[r+2][c]) {
+                        matched.add(`${r},${c}`);
+                        matched.add(`${r+1},${c}`);
+                        matched.add(`${r+2},${c}`);
+                    }
+                }
+            }
+
+            return Array.from(matched).map(s => {
+                const [r, c] = s.split(',').map(Number);
+                return { row: r, col: c };
+            });
+        }
+
+        function removeAnipangMatches(matches) {
+            matches.forEach(({ row, col }) => {
+                const cell = document.querySelector(`.anipang-cell[data-row="${row}"][data-col="${col}"]`);
+                if (cell) cell.classList.add('matched');
+                anipangBoard[row][col] = null;
+            });
+
+            anipangScore += matches.length * 10;
+            document.getElementById('anipang-score').textContent = anipangScore;
+
+            setTimeout(() => {
+                applyAnipangGravity();
+            }, 300);
+        }
+
+        function applyAnipangGravity() {
+            for (let c = 0; c < ANIPANG_COLS; c++) {
+                let empty = [];
+                for (let r = ANIPANG_ROWS - 1; r >= 0; r--) {
+                    if (anipangBoard[r][c] === null) {
+                        empty.push(r);
+                    } else if (empty.length > 0) {
+                        const target = empty.shift();
+                        anipangBoard[target][c] = anipangBoard[r][c];
+                        anipangBoard[r][c] = null;
+                        empty.push(r);
+                    }
+                }
+
+                // Fill new cells
+                for (let i = 0; i < empty.length; i++) {
+                    anipangBoard[empty.length - 1 - i][c] = Math.floor(Math.random() * ANIMAL_EMOJIS.length);
+                }
+            }
+
+            updateAnipangDisplay();
+
+            // Check for cascade matches
+            setTimeout(() => {
+                const newMatches = findAnipangMatches();
+                if (newMatches.length > 0) {
+                    setTimeout(() => removeAnipangMatches(newMatches), 150);
+                } else {
+                    isAnimating = false;
+                }
+            }, 200);
+        }
+
+        function updateAnipangDisplay() {
+            for (let r = 0; r < ANIPANG_ROWS; r++) {
+                for (let c = 0; c < ANIPANG_COLS; c++) {
+                    const cell = document.querySelector(`.anipang-cell[data-row="${r}"][data-col="${c}"]`);
+                    if (anipangBoard[r][c] !== null) {
+                        cell.className = `anipang-cell color-${anipangBoard[r][c] % 6}`;
+                        cell.textContent = ANIMAL_EMOJIS[anipangBoard[r][c]];
+                    } else {
+                        cell.className = 'anipang-cell';
+                        cell.textContent = '';
+                    }
+                }
+            }
+        }
+
+        function startAnipangTimer() {
+            anipangTimer = setInterval(() => {
+                anipangTimeLeft -= 0.1;
+                const percent = (anipangTimeLeft / 90) * 100;
+                document.getElementById('timer-fill').style.width = percent + '%';
+
+                if (anipangTimeLeft <= 0) {
+                    anipangTimeLeft = 0;
+                    clearInterval(anipangTimer);
+                    showGameOver(anipangScore, 'anipang');
+                }
+            }, 100);
+        }
+
+        // ============ HOtris Game ============
+        const TETRIS_COLS = 8;
+        const TETRIS_ROWS = 14;
+        const TETRIS_SHAPES = [
+            [[1,1,1,1]],
+            [[1,1],[1,1]],
+            [[1,1,1],[0,1,0]],
+            [[1,1,1],[1,0,0]],
+            [[1,1,1],[0,0,1]],
+            [[1,1,0],[0,1,1]],
+            [[0,1,1],[1,1,0]]
+        ];
+        const BLOCK_EMOJIS = ['⭐', '🌙', '💎', '🌸', '🍭', '🌈', '🍀'];
+        const ENCOURAGE_MSGS = [
+            ['잘했어! 👏', '좋아! 😊', '멋져! ✨'],
+            ['대단해! 🎉', '짱이야! 💪', '와우! 🌟'],
+            ['최고야! 🏆', '천재! 🧠', '놀라워! 🤩'],
+            ['완벽해! 👑', '슈퍼스타! 🌈', '전설이다! 🔥']
+        ];
+
+        let tetrisBoard = [];
+        let tetrisScore = 0;
+        let currentPiece = null;
+        let currentColor = 0;
+        let currentRow = 0;
+        let currentCol = 0;
+        let nextPiece = null;
+        let nextColor = 0;
+        let tetrisGameStarted = false;
+        let tetrisTimer = null;
+
+        function initTetrisBoard() {
+            const board = document.getElementById('tetris-board');
+            board.innerHTML = '';
+            tetrisBoard = [];
+
+            for (let r = 0; r < TETRIS_ROWS; r++) {
+                tetrisBoard[r] = [];
+                for (let c = 0; c < TETRIS_COLS; c++) {
+                    tetrisBoard[r][c] = null;
+                    const cell = document.createElement('div');
+                    cell.className = 'tetris-cell';
+                    cell.id = `tetris-${r}-${c}`;
+                    board.appendChild(cell);
+                }
+            }
+
+            nextPiece = TETRIS_SHAPES[Math.floor(Math.random() * TETRIS_SHAPES.length)];
+            nextColor = Math.floor(Math.random() * 7);
+            updateNextPieceDisplay();
+            spawnTetrisPiece();
+        }
+
+        function spawnTetrisPiece() {
+            currentPiece = nextPiece;
+            currentColor = nextColor;
+            nextPiece = TETRIS_SHAPES[Math.floor(Math.random() * TETRIS_SHAPES.length)];
+            nextColor = Math.floor(Math.random() * 7);
+
+            currentRow = 0;
+            currentCol = Math.floor((TETRIS_COLS - currentPiece[0].length) / 2);
+
+            updateNextPieceDisplay();
+
+            if (checkTetrisCollision(0, currentRow, currentCol)) {
+                tetrisGameStarted = false;
+                showGameOver(tetrisScore, 'tetris');
+            }
+
+            drawTetris();
+        }
+
+        function updateNextPieceDisplay() {
+            const next = document.getElementById('next-piece');
+            next.innerHTML = '';
+
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < 4; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'next-cell';
+                    if (nextPiece[r] && nextPiece[r][c]) {
+                        cell.classList.add('filled', `color-${nextColor}`);
+                        cell.textContent = BLOCK_EMOJIS[nextColor];
+                    }
+                    next.appendChild(cell);
+                }
+            }
+        }
+
+        function checkTetrisCollision(rowOffset, row, col, piece) {
+            const p = piece || currentPiece;
+            for (let r = 0; r < p.length; r++) {
+                for (let c = 0; c < p[r].length; c++) {
+                    if (p[r][c]) {
+                        const newRow = row + r + rowOffset;
+                        const newCol = col + c;
+                        if (newCol < 0 || newCol >= TETRIS_COLS || newRow >= TETRIS_ROWS) {
+                            return true;
+                        }
+                        if (newRow >= 0 && tetrisBoard[newRow][newCol] !== null) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        function rotateTetris() {
+            const rotated = currentPiece[0].map((_, i) => currentPiece.map(row => row[i]).reverse());
+            if (!checkTetrisCollision(0, currentRow, currentCol, rotated)) {
+                currentPiece = rotated;
+                drawTetris();
+            }
+        }
+
+        function moveTetris(dRow, dCol) {
+            if (!checkTetrisCollision(0, currentRow + dRow, currentCol + dCol)) {
+                currentRow += dRow;
+                currentCol += dCol;
+                drawTetris();
+                return true;
+            }
+            return false;
+        }
+
+        function lockTetrisPiece() {
+            for (let r = 0; r < currentPiece.length; r++) {
+                for (let c = 0; c < currentPiece[r].length; c++) {
+                    if (currentPiece[r][c]) {
+                        const row = currentRow + r;
+                        const col = currentCol + c;
+                        if (row >= 0) {
+                            tetrisBoard[row][col] = currentColor;
+                        }
+                    }
+                }
+            }
+
+            clearTetrisLines();
+            spawnTetrisPiece();
+        }
+
+        function showEncourageMsg(lines) {
+            const idx = Math.min(lines, 4) - 1;
+            const msgs = ENCOURAGE_MSGS[idx];
+            const msg = msgs[Math.floor(Math.random() * msgs.length)];
+            const el = document.getElementById('encourage-text');
+            el.textContent = msg;
+            el.style.animation = 'none';
+            el.offsetHeight;
+            el.style.animation = 'encouragePop 1.5s ease-out forwards';
+        }
+
+        function clearTetrisLines() {
+            let lines = 0;
+
+            for (let r = TETRIS_ROWS - 1; r >= 0; r--) {
+                let full = true;
+                for (let c = 0; c < TETRIS_COLS; c++) {
+                    if (tetrisBoard[r][c] === null) {
+                        full = false;
+                        break;
+                    }
+                }
+
+                if (full) {
+                    tetrisBoard.splice(r, 1);
+                    tetrisBoard.unshift(Array(TETRIS_COLS).fill(null));
+                    lines++;
+                    r++;
+                }
+            }
+
+            if (lines > 0) {
+                tetrisScore += lines * 100 * lines;
+                document.getElementById('tetris-score').textContent = tetrisScore;
+                showEncourageMsg(lines);
+            }
+        }
+
+        function getGhostRow() {
+            let ghostRow = currentRow;
+            while (!checkTetrisCollision(0, ghostRow + 1, currentCol)) {
+                ghostRow++;
+            }
+            return ghostRow;
+        }
+
+        function drawTetris() {
+            // Clear board
+            for (let r = 0; r < TETRIS_ROWS; r++) {
+                for (let c = 0; c < TETRIS_COLS; c++) {
+                    const cell = document.getElementById(`tetris-${r}-${c}`);
+                    cell.className = 'tetris-cell';
+                    cell.textContent = '';
+                    if (tetrisBoard[r][c] !== null) {
+                        cell.classList.add('filled', `color-${tetrisBoard[r][c]}`);
+                        cell.textContent = BLOCK_EMOJIS[tetrisBoard[r][c]];
+                    }
+                }
+            }
+
+            if (currentPiece) {
+                // Draw ghost piece
+                const ghostRow = getGhostRow();
+                if (ghostRow !== currentRow) {
+                    for (let r = 0; r < currentPiece.length; r++) {
+                        for (let c = 0; c < currentPiece[r].length; c++) {
+                            if (currentPiece[r][c]) {
+                                const row = ghostRow + r;
+                                const col = currentCol + c;
+                                if (row >= 0 && row < TETRIS_ROWS && col >= 0 && col < TETRIS_COLS) {
+                                    const cell = document.getElementById(`tetris-${row}-${col}`);
+                                    if (!cell.classList.contains('filled')) {
+                                        cell.classList.add('filled', `color-${currentColor}`, 'ghost');
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Draw current piece
+                for (let r = 0; r < currentPiece.length; r++) {
+                    for (let c = 0; c < currentPiece[r].length; c++) {
+                        if (currentPiece[r][c]) {
+                            const row = currentRow + r;
+                            const col = currentCol + c;
+                            if (row >= 0 && row < TETRIS_ROWS && col >= 0 && col < TETRIS_COLS) {
+                                const cell = document.getElementById(`tetris-${row}-${col}`);
+                                cell.className = 'tetris-cell filled color-' + currentColor;
+                                cell.textContent = BLOCK_EMOJIS[currentColor];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function dropTetrisPiece() {
+            if (!tetrisGameStarted) return;
+
+            if (!moveTetris(1, 0)) {
+                lockTetrisPiece();
+            }
+            drawTetris();
+        }
+
+        function hardDrop() {
+            if (!tetrisGameStarted) return;
+            while (moveTetris(1, 0)) {
+                tetrisScore += 2;
+            }
+            document.getElementById('tetris-score').textContent = tetrisScore;
+            lockTetrisPiece();
+        }
+
+        function startTetrisTimer() {
+            tetrisTimer = setInterval(dropTetrisPiece, 1200);
+        }
+
+        // ============ Game Control ============
+        function startAnipang() {
+            document.getElementById('menu-screen').style.display = 'none';
+            document.getElementById('hint-text').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'flex';
+            document.getElementById('anipang-game').style.display = 'flex';
+            document.getElementById('hotris-game').style.display = 'none';
+            document.getElementById('anipang-start-btn').style.display = 'block';
+
+            anipangScore = 0;
+            document.getElementById('anipang-score').textContent = '0';
+            initAnipangBoard();
+        }
+
+        function startAnipangGame() {
+            anipangGameStarted = true;
+            anipangTimeLeft = 90;
+            document.getElementById('anipang-start-btn').style.display = 'none';
+            document.getElementById('timer-fill').style.width = '100%';
+            startAnipangTimer();
+        }
+
+        function startHOtris() {
+            document.getElementById('menu-screen').style.display = 'none';
+            document.getElementById('hint-text').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'flex';
+            document.getElementById('anipang-game').style.display = 'none';
+            document.getElementById('hotris-game').style.display = 'flex';
+            document.getElementById('tetris-start-btn').style.display = 'block';
+            document.getElementById('encourage-text').textContent = '';
+
+            tetrisScore = 0;
+            tetrisGameStarted = false;
+            document.getElementById('tetris-score').textContent = '0';
+            initTetrisBoard();
+        }
+
+        function startTetrisGame() {
+            tetrisGameStarted = true;
+            document.getElementById('tetris-start-btn').style.display = 'none';
+            startTetrisTimer();
+        }
+
+        function showGameOver(score, game) {
+            if (game === 'anipang') {
+                clearInterval(anipangTimer);
+                anipangGameStarted = false;
+            } else {
+                clearInterval(tetrisTimer);
+                tetrisGameStarted = false;
+            }
+
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('game-over-modal').classList.add('show');
+            currentGame = game;
+        }
+
+        let currentGame = null;
+
+        function restartGame() {
+            document.getElementById('game-over-modal').classList.remove('show');
+
+            if (currentGame === 'anipang') {
+                anipangScore = 0;
+                document.getElementById('anipang-score').textContent = '0';
+                initAnipangBoard();
+                startAnipangGame();
+            } else {
+                tetrisScore = 0;
+                document.getElementById('tetris-score').textContent = '0';
+                document.getElementById('encourage-text').textContent = '';
+                initTetrisBoard();
+                startTetrisGame();
+            }
+        }
+
+        function goBack() {
+            if (anipangTimer) clearInterval(anipangTimer);
+            if (tetrisTimer) clearInterval(tetrisTimer);
+
+            anipangGameStarted = false;
+            tetrisGameStarted = false;
+            currentGame = null;
+
+            document.getElementById('game-screen').style.display = 'none';
+            document.getElementById('menu-screen').style.display = 'flex';
+            document.getElementById('hint-text').style.display = 'block';
+            document.getElementById('anipang-game').style.display = 'none';
+            document.getElementById('hotris-game').style.display = 'none';
+        }
+
+        // Keyboard controls for Tetris
+        document.addEventListener('keydown', (e) => {
+            if (!tetrisGameStarted) return;
+
+            if (e.key === 'ArrowLeft') moveTetris(0, -1);
+            else if (e.key === 'ArrowRight') moveTetris(0, 1);
+            else if (e.key === 'ArrowDown') { moveTetris(1, 0); tetrisScore += 1; document.getElementById('tetris-score').textContent = tetrisScore; }
+            else if (e.key === 'ArrowUp') rotateTetris();
+            else if (e.key === ' ') { e.preventDefault(); hardDrop(); }
+        });
+
+        // Touch controls for Tetris
+        document.getElementById('btn-left').addEventListener('click', () => { if (tetrisGameStarted) moveTetris(0, -1); });
+        document.getElementById('btn-right').addEventListener('click', () => { if (tetrisGameStarted) moveTetris(0, 1); });
+        document.getElementById('btn-rotate').addEventListener('click', () => { if (tetrisGameStarted) rotateTetris(); });
+        document.getElementById('btn-down').addEventListener('click', () => {
+            if (tetrisGameStarted) {
+                moveTetris(1, 0);
+                tetrisScore += 1;
+                document.getElementById('tetris-score').textContent = tetrisScore;
+            }
+        });
+        document.getElementById('btn-drop').addEventListener('click', () => { if (tetrisGameStarted) hardDrop(); });
+
+        // ============ Touch Swipe Gestures for Tetris ============
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchStartTime = 0;
+        let touchMoved = false;
+
+        const tetrisBoardEl = document.getElementById('tetris-board');
+
+        tetrisBoardEl.addEventListener('touchstart', (e) => {
+            if (!tetrisGameStarted) return;
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            touchStartTime = Date.now();
+            touchMoved = false;
+            e.preventDefault();
+        }, { passive: false });
+
+        tetrisBoardEl.addEventListener('touchmove', (e) => {
+            if (!tetrisGameStarted) return;
+            e.preventDefault();
+            const dx = e.touches[0].clientX - touchStartX;
+            const dy = e.touches[0].clientY - touchStartY;
+            if (Math.abs(dx) > 30) {
+                touchMoved = true;
+                if (dx > 0) moveTetris(0, 1);
+                else moveTetris(0, -1);
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }
+            if (dy > 40) {
+                touchMoved = true;
+                moveTetris(1, 0);
+                tetrisScore += 1;
+                document.getElementById('tetris-score').textContent = tetrisScore;
+                touchStartY = e.touches[0].clientY;
+            }
+        }, { passive: false });
+
+        tetrisBoardEl.addEventListener('touchend', (e) => {
+            if (!tetrisGameStarted) return;
+            e.preventDefault();
+            const dt = Date.now() - touchStartTime;
+            if (!touchMoved && dt < 300) {
+                rotateTetris();
+            }
+        }, { passive: false });
+
+        // Prevent page scroll during Anipang gameplay
+        const anipangBoardEl = document.getElementById('anipang-board');
+        anipangBoardEl.addEventListener('touchmove', (e) => {
+            if (anipangGameStarted) e.preventDefault();
+        }, { passive: false });
+
+        // Prevent body scroll when games are active
+        document.body.addEventListener('touchmove', (e) => {
+            if (tetrisGameStarted || anipangGameStarted) {
+                if (e.target.closest('#tetris-board') || e.target.closest('#anipang-board') || e.target.closest('.touch-controls')) {
+                    e.preventDefault();
+                }
+            }
+        }, { passive: false });
+    </script>
+
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-analytics.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCnB-eKkDiHQjuBziBhgw6G4qekn4UZfEs",
+            authDomain: "hogame-1da82.firebaseapp.com",
+            projectId: "hogame-1da82",
+            storageBucket: "hogame-1da82.firebasestorage.app",
+            messagingSenderId: "905969389573",
+            appId: "1:905969389573:web:23cbc430f7592668318c6c",
+            measurementId: "G-L59FB1JVXL"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+    </script>
+</body>
+</html>
