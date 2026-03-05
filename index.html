@@ -172,6 +172,22 @@
             transform: scale(1.1);
         }
 
+        .anipang-cell.dragging {
+            transform: scale(1.15);
+            box-shadow: 0 0 0 4px #ff6b9d, 0 6px 20px rgba(255,107,157,0.5);
+            z-index: 10;
+            transition: transform 0.1s;
+        }
+
+        .anipang-cell.hint-glow {
+            animation: hintBlink 0.5s ease-in-out 4 alternate;
+        }
+
+        @keyframes hintBlink {
+            0% { box-shadow: 0 0 0 0 transparent; transform: scale(1); }
+            100% { box-shadow: 0 0 15px 6px rgba(255, 215, 0, 0.8); transform: scale(1.12); }
+        }
+
         .anipang-cell.matched {
             animation: matchPop 0.3s ease-out;
         }
@@ -188,6 +204,205 @@
         .anipang-cell.color-3 { background: #d8b8e8; }
         .anipang-cell.color-4 { background: #f0b8c8; }
         .anipang-cell.color-5 { background: #e8c8a0; }
+
+        /* Anipang encourage & controls */
+        .anipang-encourage {
+            font-size: 36px;
+            color: #ff6b9d;
+            min-height: 45px;
+            text-align: center;
+            margin: 8px 0;
+        }
+
+        .anipang-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .hint-btn {
+            background: linear-gradient(135deg, #ffe66d 0%, #ffcc02 100%);
+            color: #8B6914;
+            border: 3px solid #e6b800;
+            padding: 10px 24px;
+            font-size: 22px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Nanum Pen Script', cursive;
+            box-shadow: 0 4px 12px rgba(255, 204, 2, 0.4);
+            transition: transform 0.2s;
+        }
+
+        .hint-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Mode & Difficulty Selectors */
+        .mode-selector, .difficulty-selector {
+            display: flex;
+            gap: 10px;
+            margin: 8px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .mode-btn, .diff-btn {
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-family: 'Nanum Pen Script', cursive;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 3px solid #ddd;
+            background: white;
+            color: #666;
+        }
+
+        .mode-btn.active, .diff-btn.active {
+            border-color: #ff6b9d;
+            background: #fff0f5;
+            color: #ff6b9d;
+            box-shadow: 0 2px 10px rgba(255, 107, 157, 0.3);
+        }
+
+        /* Sticker Bar */
+        .sticker-bar {
+            display: flex;
+            gap: 6px;
+            padding: 8px 16px;
+            background: white;
+            border-radius: 50px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            border: 2px solid #ffe0ec;
+            margin: 8px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+            min-height: 40px;
+            align-items: center;
+        }
+
+        .sticker {
+            font-size: 24px;
+            animation: stickerPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes stickerPop {
+            0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+            70% { transform: scale(1.3) rotate(10deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .sticker-label {
+            font-size: 18px;
+            color: #ccc;
+        }
+
+        /* Heart Explosion */
+        .heart-particle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 200;
+            font-size: 20px;
+            animation: heartBurst var(--duration, 1s) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        @keyframes heartBurst {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(0.3) rotate(0deg);
+            }
+            20% {
+                opacity: 1;
+                transform: translate(var(--tx20), var(--ty20)) scale(1.2) rotate(var(--rot));
+            }
+            60% {
+                opacity: 1;
+                transform: translate(var(--tx60), var(--ty60)) scale(1) rotate(var(--rot2));
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--tx100), var(--ty100)) scale(0.5) rotate(var(--rot3));
+            }
+        }
+
+        /* Anipang encourage pop */
+        .anipang-encourage.pop {
+            animation: encourageHeartPop 2s ease-out forwards;
+        }
+
+        @keyframes encourageHeartPop {
+            0% { opacity: 0; transform: scale(0.3); }
+            15% { opacity: 1; transform: scale(1.3); }
+            30% { transform: scale(1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; transform: scale(1) translateY(-10px); }
+        }
+
+        /* Tutorial Overlay */
+        .tutorial-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.75);
+            z-index: 300;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .tutorial-overlay.show {
+            display: flex;
+        }
+
+        .tutorial-box {
+            background: white;
+            border-radius: 28px;
+            padding: 36px 32px;
+            text-align: center;
+            max-width: 340px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .tutorial-box h2 {
+            font-size: 36px;
+            color: #ff6b9d;
+            margin-bottom: 16px;
+        }
+
+        .tutorial-box p {
+            font-size: 24px;
+            color: #666;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .tutorial-hand {
+            font-size: 64px;
+            animation: tutorialSwipe 1.5s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        @keyframes tutorialSwipe {
+            0% { transform: translate(-20px, 0) rotate(-10deg); }
+            50% { transform: translate(20px, 0) rotate(10deg); }
+            100% { transform: translate(-20px, 0) rotate(-10deg); }
+        }
+
+        .tutorial-close-btn {
+            background: linear-gradient(135deg, #ff6b9d 0%, #ff8e53 100%);
+            color: white;
+            border: none;
+            padding: 14px 40px;
+            font-size: 26px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Nanum Pen Script', cursive;
+            margin-top: 16px;
+            box-shadow: 0 4px 15px rgba(255,107,157,0.4);
+        }
 
         /* HOtris Game Styles */
         #hotris-game {
@@ -428,7 +643,13 @@
         .modal p {
             font-size: 32px;
             color: #666;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
+        }
+
+        .modal-stickers {
+            font-size: 18px;
+            color: #ff6b9d;
+            margin-bottom: 20px;
         }
 
         .hint {
@@ -462,10 +683,10 @@
             touch-action: manipulation;
         }
 
-        /* ============ Mobile Responsive (Galaxy S25 ~360px) ============ */
+        /* ============ Mobile Responsive (Galaxy S25: viewport ~393x852) ============ */
         @media (max-width: 600px) {
             body {
-                padding: 10px;
+                padding: 8px;
             }
 
             h1 {
@@ -475,23 +696,23 @@
 
             .subtitle {
                 font-size: 18px;
-                margin-bottom: 15px;
+                margin-bottom: 12px;
             }
 
             .game-container {
-                gap: 20px;
+                gap: 16px;
             }
 
             .game-button {
-                width: 160px;
-                height: 100px;
-                font-size: 26px;
+                width: 170px;
+                height: 110px;
+                font-size: 28px;
                 border-radius: 18px;
                 gap: 6px;
             }
 
             .game-button .desc {
-                font-size: 15px;
+                font-size: 16px;
             }
 
             .back-btn {
@@ -503,40 +724,74 @@
             }
 
             .score-display {
-                font-size: 24px;
-                margin: 5px 0;
+                font-size: 26px;
+                margin: 6px 0;
             }
 
-            /* Anipang Mobile */
+            /* Anipang Mobile - Galaxy S25 optimized (393px wide) */
             .timer-bar {
-                max-width: 340px;
+                max-width: 375px;
                 height: 16px;
             }
 
             #anipang-board {
-                grid-template-columns: repeat(7, 46px);
-                grid-template-rows: repeat(7, 46px);
+                grid-template-columns: repeat(7, 50px);
+                grid-template-rows: repeat(7, 50px);
                 gap: 3px;
                 padding: 6px;
                 border-width: 3px;
             }
 
             .anipang-cell {
-                width: 46px;
-                height: 46px;
-                font-size: 26px;
-                border-radius: 8px;
+                width: 50px;
+                height: 50px;
+                font-size: 28px;
+                border-radius: 10px;
             }
 
-            /* HOtris Mobile */
+            .anipang-encourage {
+                font-size: 28px;
+                min-height: 35px;
+                margin: 4px 0;
+            }
+
+            .anipang-controls {
+                gap: 8px;
+                margin-top: 6px;
+            }
+
+            .hint-btn {
+                padding: 8px 18px;
+                font-size: 18px;
+            }
+
+            .mode-btn, .diff-btn {
+                padding: 8px 14px;
+                font-size: 16px;
+            }
+
+            .sticker-bar {
+                padding: 6px 12px;
+                gap: 4px;
+            }
+
+            .sticker {
+                font-size: 20px;
+            }
+
+            .sticker-label {
+                font-size: 15px;
+            }
+
+            /* HOtris Mobile - Galaxy S25 optimized */
             #hotris-container {
                 flex-direction: column;
                 align-items: center;
-                gap: 15px;
+                gap: 12px;
             }
 
             #tetris-board {
-                grid-template-columns: repeat(8, 40px);
+                grid-template-columns: repeat(8, 44px);
                 grid-template-rows: repeat(14, 40px);
                 gap: 1px;
                 padding: 6px;
@@ -544,7 +799,7 @@
             }
 
             .tetris-cell {
-                width: 40px;
+                width: 44px;
                 height: 40px;
                 font-size: 20px;
                 border-radius: 5px;
@@ -583,13 +838,13 @@
             }
 
             .touch-controls {
-                gap: 10px;
-                margin-top: 12px;
+                gap: 8px;
+                margin-top: 10px;
             }
 
             .touch-btn {
-                width: 62px;
-                height: 62px;
+                width: 66px;
+                height: 66px;
                 font-size: 28px;
             }
 
@@ -599,8 +854,8 @@
             }
 
             .start-btn {
-                font-size: 22px;
-                padding: 12px 30px;
+                font-size: 24px;
+                padding: 14px 36px;
                 margin-top: 12px;
             }
 
@@ -616,50 +871,68 @@
 
             .modal p {
                 font-size: 24px;
-                margin-bottom: 20px;
+                margin-bottom: 15px;
             }
 
             .hint {
                 font-size: 16px;
             }
+
+            /* Tutorial Mobile */
+            .tutorial-box {
+                padding: 28px 24px;
+                max-width: 310px;
+            }
+
+            .tutorial-box h2 {
+                font-size: 30px;
+            }
+
+            .tutorial-box p {
+                font-size: 20px;
+            }
+
+            .tutorial-hand {
+                font-size: 52px;
+            }
         }
 
-        /* Extra small screens */
+        /* Extra small screens (< 380px) */
         @media (max-width: 380px) {
             #anipang-board {
-                grid-template-columns: repeat(7, 42px);
-                grid-template-rows: repeat(7, 42px);
+                grid-template-columns: repeat(7, 44px);
+                grid-template-rows: repeat(7, 44px);
                 gap: 2px;
                 padding: 5px;
             }
 
             .anipang-cell {
-                width: 42px;
-                height: 42px;
+                width: 44px;
+                height: 44px;
                 font-size: 24px;
             }
 
             #tetris-board {
-                grid-template-columns: repeat(8, 36px);
+                grid-template-columns: repeat(8, 38px);
                 grid-template-rows: repeat(14, 36px);
             }
 
             .tetris-cell {
-                width: 36px;
+                width: 38px;
                 height: 36px;
                 font-size: 18px;
             }
 
             .touch-btn {
-                width: 56px;
-                height: 56px;
+                width: 58px;
+                height: 58px;
                 font-size: 24px;
             }
 
             .game-button {
-                width: 145px;
-                height: 90px;
-                font-size: 22px;
+                width: 150px;
+                height: 95px;
+                font-size: 24px;
             }
         }
     </style>
@@ -685,10 +958,35 @@
         <!-- Anipang Game -->
         <div id="anipang-game">
             <div class="score-display">점수: <span id="anipang-score">0</span></div>
-            <div class="timer-bar">
+
+            <!-- Sticker Bar -->
+            <div class="sticker-bar" id="sticker-bar">
+                <span class="sticker-label" id="sticker-label">스티커를 모아봐요!</span>
+            </div>
+
+            <div class="timer-bar" id="timer-bar-container">
                 <div class="timer-fill" id="timer-fill"></div>
             </div>
+
+            <!-- Mode & Difficulty Selectors -->
+            <div class="mode-selector" id="mode-selector">
+                <button class="mode-btn active" data-mode="timed" onclick="selectMode('timed')">⏰ 시간 모드</button>
+                <button class="mode-btn" data-mode="infinite" onclick="selectMode('infinite')">♾️ 연습 모드</button>
+            </div>
+            <div class="difficulty-selector" id="difficulty-selector">
+                <button class="diff-btn active" data-diff="easy" onclick="selectDifficulty('easy')">🌟 쉬움</button>
+                <button class="diff-btn" data-diff="normal" onclick="selectDifficulty('normal')">💪 보통</button>
+            </div>
+
             <div id="anipang-board"></div>
+
+            <div class="anipang-encourage" id="anipang-encourage"></div>
+
+            <!-- Controls -->
+            <div class="anipang-controls" id="anipang-controls" style="display:none;">
+                <button class="hint-btn" onclick="showHint()">💡 힌트</button>
+            </div>
+
             <button class="start-btn" id="anipang-start-btn" onclick="startAnipangGame()">게임 시작!</button>
         </div>
 
@@ -728,17 +1026,186 @@
         <div class="modal-content">
             <h2 id="modal-title">게임 끝!</h2>
             <p>점수: <span id="final-score">0</span></p>
+            <div class="modal-stickers" id="modal-stickers"></div>
             <button class="start-btn" onclick="restartGame()">다시 하기 🔄</button>
+        </div>
+    </div>
+
+    <!-- Tutorial Overlay -->
+    <div class="tutorial-overlay" id="tutorial-overlay">
+        <div class="tutorial-box">
+            <h2>🦕 HOpang 하는 법</h2>
+            <div class="tutorial-hand">👆</div>
+            <p>공룡을 누르고<br><strong>쓱~</strong> 옆으로 밀어봐!</p>
+            <p>같은 공룡 3개를<br>나란히 맞추면 돼요!</p>
+            <p>💡 모르겠으면<br>힌트 버튼을 눌러봐!</p>
+            <button class="tutorial-close-btn" onclick="closeTutorial()">알겠어요! 👍</button>
         </div>
     </div>
 
     <p class="hint" id="hint-text">버튼을 클릭해서 게임을 선택하세요!</p>
 
     <script>
+        // ============ Sound System (Web Audio API) ============
+        let audioCtx = null;
+        function getAudioCtx() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            return audioCtx;
+        }
+
+        function playTone(freq, duration, type, vol) {
+            try {
+                const ctx = getAudioCtx();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = type || 'sine';
+                osc.frequency.value = freq;
+                gain.gain.value = vol || 0.15;
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + duration);
+            } catch(e) {}
+        }
+
+        function playMatchSound() {
+            playTone(523, 0.12, 'sine', 0.15);
+            setTimeout(() => playTone(659, 0.12, 'sine', 0.15), 80);
+            setTimeout(() => playTone(784, 0.15, 'sine', 0.15), 160);
+        }
+
+        function playComboSound() {
+            playTone(784, 0.1, 'sine', 0.18);
+            setTimeout(() => playTone(988, 0.1, 'sine', 0.18), 70);
+            setTimeout(() => playTone(1175, 0.15, 'sine', 0.18), 140);
+            setTimeout(() => playTone(1318, 0.2, 'triangle', 0.12), 210);
+        }
+
+        function playStickerSound() {
+            playTone(880, 0.08, 'sine', 0.12);
+            setTimeout(() => playTone(1108, 0.08, 'sine', 0.12), 60);
+            setTimeout(() => playTone(1318, 0.15, 'triangle', 0.1), 120);
+        }
+
+        function playSwapSound() {
+            playTone(440, 0.06, 'sine', 0.08);
+            setTimeout(() => playTone(554, 0.06, 'sine', 0.08), 40);
+        }
+
+        function playFailSound() {
+            playTone(330, 0.15, 'square', 0.06);
+            setTimeout(() => playTone(277, 0.2, 'square', 0.06), 120);
+        }
+
+        function playGameOverSound() {
+            playTone(523, 0.2, 'sine', 0.12);
+            setTimeout(() => playTone(494, 0.2, 'sine', 0.12), 200);
+            setTimeout(() => playTone(440, 0.2, 'sine', 0.12), 400);
+            setTimeout(() => playTone(392, 0.4, 'sine', 0.12), 600);
+        }
+
+        function playHintSound() {
+            playTone(660, 0.1, 'sine', 0.1);
+            setTimeout(() => playTone(880, 0.15, 'triangle', 0.08), 100);
+        }
+
+        // ============ Heart Explosion Effect ============
+        function spawnHeartExplosion(x, y, count) {
+            const hearts = ['❤️', '💕', '💗', '💖', '💓'];
+            for (let i = 0; i < (count || 18); i++) {
+                const heart = document.createElement('div');
+                heart.className = 'heart-particle';
+                heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+
+                const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.6;
+                const dist = 60 + Math.random() * 100;
+                const dist60 = dist * 0.7;
+                const dist20 = dist * 0.3;
+
+                const tx100 = Math.cos(angle) * dist;
+                const ty100 = Math.sin(angle) * dist + 30;
+                const tx60 = Math.cos(angle) * dist60;
+                const ty60 = Math.sin(angle) * dist60 - 10;
+                const tx20 = Math.cos(angle) * dist20;
+                const ty20 = Math.sin(angle) * dist20 - 20;
+
+                const rot = (Math.random() - 0.5) * 60;
+                const duration = 0.7 + Math.random() * 0.6;
+                const size = 14 + Math.random() * 14;
+
+                heart.style.cssText = `
+                    left: ${x}px; top: ${y}px;
+                    font-size: ${size}px;
+                    --tx20: ${tx20}px; --ty20: ${ty20}px;
+                    --tx60: ${tx60}px; --ty60: ${ty60}px;
+                    --tx100: ${tx100}px; --ty100: ${ty100}px;
+                    --rot: ${rot}deg; --rot2: ${rot * 1.5}deg; --rot3: ${rot * 2}deg;
+                    --duration: ${duration}s;
+                `;
+
+                document.body.appendChild(heart);
+                setTimeout(() => heart.remove(), duration * 1000 + 50);
+            }
+        }
+
+        // ============ Sticker / Reward System ============
+        const STICKER_MILESTONES = [50, 150, 300, 500, 800, 1200, 1800, 2500, 3500, 5000];
+        const STICKER_ICONS = ['⭐', '🌟', '🏅', '🎖️', '🏆', '👑', '💎', '🦄', '🌈', '🎪'];
+        let earnedStickers = [];
+        let lastStickerIndex = -1;
+
+        function checkStickerMilestone(score) {
+            for (let i = lastStickerIndex + 1; i < STICKER_MILESTONES.length; i++) {
+                if (score >= STICKER_MILESTONES[i]) {
+                    lastStickerIndex = i;
+                    earnedStickers.push(STICKER_ICONS[i]);
+                    addStickerToBar(STICKER_ICONS[i]);
+                    playStickerSound();
+                    // Heart explosion at sticker bar position
+                    const bar = document.getElementById('sticker-bar');
+                    const rect = bar.getBoundingClientRect();
+                    spawnHeartExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2, 12);
+                } else {
+                    break;
+                }
+            }
+        }
+
+        function addStickerToBar(icon) {
+            const bar = document.getElementById('sticker-bar');
+            const label = document.getElementById('sticker-label');
+            if (label) label.remove();
+            const s = document.createElement('span');
+            s.className = 'sticker';
+            s.textContent = icon;
+            bar.appendChild(s);
+        }
+
+        function resetStickers() {
+            earnedStickers = [];
+            lastStickerIndex = -1;
+            const bar = document.getElementById('sticker-bar');
+            bar.innerHTML = '<span class="sticker-label" id="sticker-label">스티커를 모아봐요!</span>';
+        }
+
+        // ============ Tutorial System ============
+        let tutorialShown = false;
+        function showTutorial() {
+            if (tutorialShown) return;
+            tutorialShown = true;
+            document.getElementById('tutorial-overlay').classList.add('show');
+        }
+        function closeTutorial() {
+            document.getElementById('tutorial-overlay').classList.remove('show');
+        }
+
         // ============ Anipang Game ============
         const ANIPANG_COLS = 7;
         const ANIPANG_ROWS = 7;
-        const ANIMAL_EMOJIS = ['🦕', '🦖', '🦎', '🐊', '🥚', '🦴'];
+        const ANIMAL_EMOJIS_FULL = ['🦕', '🦖', '🦎', '🐊', '🥚', '🦴'];
+        const ANIMAL_EMOJIS_EASY = ['🦕', '🦖', '🦎', '🐊'];
+        let ANIMAL_EMOJIS = ANIMAL_EMOJIS_EASY; // default easy
 
         let anipangBoard = [];
         let anipangScore = 0;
@@ -747,6 +1214,50 @@
         let anipangGameStarted = false;
         let selectedCell = null;
         let isAnimating = false;
+        let anipangCombo = 0;
+        let anipangMode = 'timed'; // 'timed' or 'infinite'
+        let anipangDifficulty = 'easy';
+        let hintCount = 3;
+
+        // ============ Anipang Encourage Messages ============
+        const ANIPANG_ENCOURAGE = [
+            '현오~ 잘했어요!!!',
+            '현오~ 대단해요!!!',
+            '현오~ 최고예요!!!',
+            '현오~ 멋져요!!!',
+            '현오~ 천재!!!',
+        ];
+
+        function showAnipangEncourage() {
+            const el = document.getElementById('anipang-encourage');
+            const msg = ANIPANG_ENCOURAGE[Math.floor(Math.random() * ANIPANG_ENCOURAGE.length)];
+            el.textContent = msg;
+            el.className = 'anipang-encourage';
+            void el.offsetHeight;
+            el.className = 'anipang-encourage pop';
+
+            // Heart explosion from the encourage text
+            const rect = el.getBoundingClientRect();
+            spawnHeartExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2, 22);
+        }
+
+        // Mode & Difficulty selection
+        function selectMode(mode) {
+            anipangMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.mode-btn[data-mode="${mode}"]`).classList.add('active');
+            // Show/hide timer bar
+            document.getElementById('timer-bar-container').style.display = mode === 'timed' ? 'block' : 'none';
+        }
+
+        function selectDifficulty(diff) {
+            anipangDifficulty = diff;
+            ANIMAL_EMOJIS = diff === 'easy' ? ANIMAL_EMOJIS_EASY : ANIMAL_EMOJIS_FULL;
+            document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.diff-btn[data-diff="${diff}"]`).classList.add('active');
+            // Reinit board preview
+            initAnipangBoard();
+        }
 
         function initAnipangBoard() {
             const board = document.getElementById('anipang-board');
@@ -776,10 +1287,77 @@
                     cell.dataset.row = r;
                     cell.dataset.col = c;
                     cell.textContent = ANIMAL_EMOJIS[val];
-                    cell.onclick = () => handleAnipangClick(r, c);
                     board.appendChild(cell);
                 }
             }
+        }
+
+        // ============ Drag/Swipe support for Anipang ============
+        let anipangDragStart = null;
+        let anipangDragging = false;
+        const SWIPE_THRESHOLD = 20;
+
+        function getAnipangCellFromEvent(e) {
+            const touch = e.touches ? e.touches[0] : e;
+            const el = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (el && el.classList.contains('anipang-cell')) {
+                return { row: parseInt(el.dataset.row), col: parseInt(el.dataset.col), el };
+            }
+            return null;
+        }
+
+        function handleAnipangDragStart(e) {
+            if (!anipangGameStarted || isAnimating) return;
+            e.preventDefault();
+            const touch = e.touches ? e.touches[0] : e;
+            const cell = getAnipangCellFromEvent(e);
+            if (cell) {
+                anipangDragStart = { row: cell.row, col: cell.col, x: touch.clientX, y: touch.clientY };
+                anipangDragging = true;
+                selectedCell = null;
+                document.querySelectorAll('.anipang-cell.selected').forEach(c => c.classList.remove('selected'));
+                cell.el.classList.add('dragging');
+            }
+        }
+
+        function handleAnipangDragMove(e) {
+            if (!anipangDragging || !anipangDragStart || isAnimating) return;
+            e.preventDefault();
+            const touch = e.touches ? e.touches[0] : e;
+            const dx = touch.clientX - anipangDragStart.x;
+            const dy = touch.clientY - anipangDragStart.y;
+
+            if (Math.abs(dx) > SWIPE_THRESHOLD || Math.abs(dy) > SWIPE_THRESHOLD) {
+                let targetRow = anipangDragStart.row;
+                let targetCol = anipangDragStart.col;
+
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    targetCol += dx > 0 ? 1 : -1;
+                } else {
+                    targetRow += dy > 0 ? 1 : -1;
+                }
+
+                if (targetRow >= 0 && targetRow < ANIPANG_ROWS && targetCol >= 0 && targetCol < ANIPANG_COLS) {
+                    document.querySelectorAll('.anipang-cell.dragging').forEach(c => c.classList.remove('dragging'));
+                    swapAnipangCells(anipangDragStart.row, anipangDragStart.col, targetRow, targetCol);
+                }
+
+                anipangDragStart = null;
+                anipangDragging = false;
+            }
+        }
+
+        function handleAnipangDragEnd(e) {
+            if (anipangDragging && anipangDragStart) {
+                const cell = document.querySelector(`.anipang-cell[data-row="${anipangDragStart.row}"][data-col="${anipangDragStart.col}"]`);
+                if (cell) {
+                    cell.classList.remove('dragging');
+                    handleAnipangClick(anipangDragStart.row, anipangDragStart.col);
+                }
+            }
+            document.querySelectorAll('.anipang-cell.dragging').forEach(c => c.classList.remove('dragging'));
+            anipangDragStart = null;
+            anipangDragging = false;
         }
 
         function handleAnipangClick(row, col) {
@@ -795,15 +1373,12 @@
                 selectedCell = null;
                 document.querySelectorAll('.anipang-cell.selected').forEach(c => c.classList.remove('selected'));
 
-                // Check if adjacent
                 const dr = Math.abs(prev.row - row);
                 const dc = Math.abs(prev.col - col);
 
                 if ((dr === 1 && dc === 0) || (dr === 0 && dc === 1)) {
-                    // Swap
                     swapAnipangCells(prev.row, prev.col, row, col);
                 } else {
-                    // Select new
                     selectedCell = { row, col };
                     cell.classList.add('selected');
                 }
@@ -811,7 +1386,6 @@
         }
 
         function swapAnipangCells(r1, c1, r2, c2) {
-            // Check if swap creates match
             const temp = anipangBoard[r1][c1];
             anipangBoard[r1][c1] = anipangBoard[r2][c2];
             anipangBoard[r2][c2] = temp;
@@ -820,19 +1394,20 @@
 
             if (matches.length > 0) {
                 isAnimating = true;
+                anipangCombo = 0;
+                playSwapSound();
                 updateAnipangDisplay();
                 setTimeout(() => removeAnipangMatches(matches), 150);
             } else {
-                // Swap back
                 anipangBoard[r2][c2] = anipangBoard[r1][c1];
                 anipangBoard[r1][c1] = temp;
+                playFailSound();
             }
         }
 
         function findAnipangMatches() {
             const matched = new Set();
 
-            // Horizontal
             for (let r = 0; r < ANIPANG_ROWS; r++) {
                 for (let c = 0; c < ANIPANG_COLS - 2; c++) {
                     const val = anipangBoard[r][c];
@@ -844,7 +1419,6 @@
                 }
             }
 
-            // Vertical
             for (let c = 0; c < ANIPANG_COLS; c++) {
                 for (let r = 0; r < ANIPANG_ROWS - 2; r++) {
                     const val = anipangBoard[r][c];
@@ -863,14 +1437,27 @@
         }
 
         function removeAnipangMatches(matches) {
+            anipangCombo++;
+            playMatchSound();
+
             matches.forEach(({ row, col }) => {
                 const cell = document.querySelector(`.anipang-cell[data-row="${row}"][data-col="${col}"]`);
                 if (cell) cell.classList.add('matched');
                 anipangBoard[row][col] = null;
             });
 
-            anipangScore += matches.length * 10;
+            const points = matches.length * 10 * anipangCombo;
+            anipangScore += points;
             document.getElementById('anipang-score').textContent = anipangScore;
+
+            // Check sticker milestones
+            checkStickerMilestone(anipangScore);
+
+            // Show encourage on combo >= 2 or big matches
+            if (anipangCombo >= 2 || matches.length >= 5) {
+                if (anipangCombo >= 2) playComboSound();
+                showAnipangEncourage();
+            }
 
             setTimeout(() => {
                 applyAnipangGravity();
@@ -891,7 +1478,6 @@
                     }
                 }
 
-                // Fill new cells
                 for (let i = 0; i < empty.length; i++) {
                     anipangBoard[empty.length - 1 - i][c] = Math.floor(Math.random() * ANIMAL_EMOJIS.length);
                 }
@@ -899,7 +1485,6 @@
 
             updateAnipangDisplay();
 
-            // Check for cascade matches
             setTimeout(() => {
                 const newMatches = findAnipangMatches();
                 if (newMatches.length > 0) {
@@ -925,15 +1510,72 @@
             }
         }
 
+        // ============ Hint System ============
+        function findValidSwap() {
+            for (let r = 0; r < ANIPANG_ROWS; r++) {
+                for (let c = 0; c < ANIPANG_COLS; c++) {
+                    // Try swap right
+                    if (c < ANIPANG_COLS - 1) {
+                        const temp = anipangBoard[r][c];
+                        anipangBoard[r][c] = anipangBoard[r][c+1];
+                        anipangBoard[r][c+1] = temp;
+                        if (findAnipangMatches().length > 0) {
+                            anipangBoard[r][c+1] = anipangBoard[r][c];
+                            anipangBoard[r][c] = temp;
+                            return [{ row: r, col: c }, { row: r, col: c+1 }];
+                        }
+                        anipangBoard[r][c+1] = anipangBoard[r][c];
+                        anipangBoard[r][c] = temp;
+                    }
+                    // Try swap down
+                    if (r < ANIPANG_ROWS - 1) {
+                        const temp = anipangBoard[r][c];
+                        anipangBoard[r][c] = anipangBoard[r+1][c];
+                        anipangBoard[r+1][c] = temp;
+                        if (findAnipangMatches().length > 0) {
+                            anipangBoard[r+1][c] = anipangBoard[r][c];
+                            anipangBoard[r][c] = temp;
+                            return [{ row: r, col: c }, { row: r+1, col: c }];
+                        }
+                        anipangBoard[r+1][c] = anipangBoard[r][c];
+                        anipangBoard[r][c] = temp;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function showHint() {
+            if (!anipangGameStarted || isAnimating) return;
+            if (hintCount <= 0) return;
+
+            const swap = findValidSwap();
+            if (!swap) return;
+
+            hintCount--;
+            document.querySelector('.hint-btn').textContent = `💡 힌트 (${hintCount})`;
+            playHintSound();
+
+            swap.forEach(({ row, col }) => {
+                const cell = document.querySelector(`.anipang-cell[data-row="${row}"][data-col="${col}"]`);
+                if (cell) {
+                    cell.classList.add('hint-glow');
+                    setTimeout(() => cell.classList.remove('hint-glow'), 2200);
+                }
+            });
+        }
+
         function startAnipangTimer() {
+            const totalTime = 90;
             anipangTimer = setInterval(() => {
                 anipangTimeLeft -= 0.1;
-                const percent = (anipangTimeLeft / 90) * 100;
+                const percent = (anipangTimeLeft / totalTime) * 100;
                 document.getElementById('timer-fill').style.width = percent + '%';
 
                 if (anipangTimeLeft <= 0) {
                     anipangTimeLeft = 0;
                     clearInterval(anipangTimer);
+                    playGameOverSound();
                     showGameOver(anipangScore, 'anipang');
                 }
             }, 100);
@@ -953,10 +1595,10 @@
         ];
         const BLOCK_EMOJIS = ['⭐', '🌙', '💎', '🌸', '🍭', '🌈', '🍀'];
         const ENCOURAGE_MSGS = [
-            ['잘했어! 👏', '좋아! 😊', '멋져! ✨'],
-            ['대단해! 🎉', '짱이야! 💪', '와우! 🌟'],
-            ['최고야! 🏆', '천재! 🧠', '놀라워! 🤩'],
-            ['완벽해! 👑', '슈퍼스타! 🌈', '전설이다! 🔥']
+            ['현오~ 잘했어요!!! 👏', '현오~ 좋아요!!! 😊', '현오~ 멋져요!!! ✨'],
+            ['현오~ 대단해요!!! 🎉', '현오~ 짱이에요!!! 💪', '현오~ 와우!!! 🌟'],
+            ['현오~ 최고예요!!! 🏆', '현오~ 천재!!! 🧠', '현오~ 놀라워요!!! 🤩'],
+            ['현오~ 완벽해요!!! 👑', '현오~ 슈퍼스타!!! 🌈', '현오~ 전설이다!!! 🔥']
         ];
 
         let tetrisBoard = [];
@@ -1005,6 +1647,7 @@
 
             if (checkTetrisCollision(0, currentRow, currentCol)) {
                 tetrisGameStarted = false;
+                playGameOverSound();
                 showGameOver(tetrisScore, 'tetris');
             }
 
@@ -1091,6 +1734,10 @@
             el.style.animation = 'none';
             el.offsetHeight;
             el.style.animation = 'encouragePop 1.5s ease-out forwards';
+
+            // Heart explosion for tetris too
+            const rect = el.getBoundingClientRect();
+            spawnHeartExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2, 15);
         }
 
         function clearTetrisLines() {
@@ -1116,6 +1763,7 @@
             if (lines > 0) {
                 tetrisScore += lines * 100 * lines;
                 document.getElementById('tetris-score').textContent = tetrisScore;
+                playMatchSound();
                 showEncourageMsg(lines);
             }
         }
@@ -1129,7 +1777,6 @@
         }
 
         function drawTetris() {
-            // Clear board
             for (let r = 0; r < TETRIS_ROWS; r++) {
                 for (let c = 0; c < TETRIS_COLS; c++) {
                     const cell = document.getElementById(`tetris-${r}-${c}`);
@@ -1143,7 +1790,6 @@
             }
 
             if (currentPiece) {
-                // Draw ghost piece
                 const ghostRow = getGhostRow();
                 if (ghostRow !== currentRow) {
                     for (let r = 0; r < currentPiece.length; r++) {
@@ -1162,7 +1808,6 @@
                     }
                 }
 
-                // Draw current piece
                 for (let r = 0; r < currentPiece.length; r++) {
                     for (let c = 0; c < currentPiece[r].length; c++) {
                         if (currentPiece[r][c]) {
@@ -1209,18 +1854,37 @@
             document.getElementById('anipang-game').style.display = 'flex';
             document.getElementById('hotris-game').style.display = 'none';
             document.getElementById('anipang-start-btn').style.display = 'block';
+            document.getElementById('mode-selector').style.display = 'flex';
+            document.getElementById('difficulty-selector').style.display = 'flex';
+            document.getElementById('anipang-controls').style.display = 'none';
 
             anipangScore = 0;
             document.getElementById('anipang-score').textContent = '0';
+            resetStickers();
             initAnipangBoard();
+
+            // Show tutorial on first visit
+            showTutorial();
         }
 
         function startAnipangGame() {
             anipangGameStarted = true;
             anipangTimeLeft = 90;
+            anipangCombo = 0;
+            hintCount = 3;
             document.getElementById('anipang-start-btn').style.display = 'none';
-            document.getElementById('timer-fill').style.width = '100%';
-            startAnipangTimer();
+            document.getElementById('mode-selector').style.display = 'none';
+            document.getElementById('difficulty-selector').style.display = 'none';
+            document.getElementById('anipang-controls').style.display = 'flex';
+            document.querySelector('.hint-btn').textContent = `💡 힌트 (${hintCount})`;
+
+            if (anipangMode === 'timed') {
+                document.getElementById('timer-bar-container').style.display = 'block';
+                document.getElementById('timer-fill').style.width = '100%';
+                startAnipangTimer();
+            } else {
+                document.getElementById('timer-bar-container').style.display = 'none';
+            }
         }
 
         function startHOtris() {
@@ -1254,8 +1918,20 @@
             }
 
             document.getElementById('final-score').textContent = score;
+
+            // Show stickers earned in modal
+            const modalStickers = document.getElementById('modal-stickers');
+            if (earnedStickers.length > 0) {
+                modalStickers.textContent = '획득한 스티커: ' + earnedStickers.join(' ');
+            } else {
+                modalStickers.textContent = '';
+            }
+
             document.getElementById('game-over-modal').classList.add('show');
             currentGame = game;
+
+            // Heart explosion on game over
+            spawnHeartExplosion(window.innerWidth / 2, window.innerHeight / 2, 25);
         }
 
         let currentGame = null;
@@ -1266,6 +1942,8 @@
             if (currentGame === 'anipang') {
                 anipangScore = 0;
                 document.getElementById('anipang-score').textContent = '0';
+                document.getElementById('anipang-encourage').textContent = '';
+                resetStickers();
                 initAnipangBoard();
                 startAnipangGame();
             } else {
@@ -1363,11 +2041,17 @@
             }
         }, { passive: false });
 
-        // Prevent page scroll during Anipang gameplay
+        // ============ Anipang Drag/Swipe Events ============
         const anipangBoardEl = document.getElementById('anipang-board');
-        anipangBoardEl.addEventListener('touchmove', (e) => {
-            if (anipangGameStarted) e.preventDefault();
-        }, { passive: false });
+
+        anipangBoardEl.addEventListener('touchstart', handleAnipangDragStart, { passive: false });
+        anipangBoardEl.addEventListener('touchmove', handleAnipangDragMove, { passive: false });
+        anipangBoardEl.addEventListener('touchend', handleAnipangDragEnd, { passive: false });
+
+        anipangBoardEl.addEventListener('mousedown', handleAnipangDragStart);
+        anipangBoardEl.addEventListener('mousemove', handleAnipangDragMove);
+        anipangBoardEl.addEventListener('mouseup', handleAnipangDragEnd);
+        anipangBoardEl.addEventListener('mouseleave', handleAnipangDragEnd);
 
         // Prevent body scroll when games are active
         document.body.addEventListener('touchmove', (e) => {
