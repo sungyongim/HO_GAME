@@ -636,6 +636,8 @@
         let timeLeft = 30;
         let gameRunning = false;
         let activeHoles = new Map(); // holeIndex -> { type, timeout }
+        let speedMult = 1.0;
+        let lastSpeedScore = 0;
 
         function initBoard() {
             const board = document.getElementById('board');
@@ -665,6 +667,8 @@
             cactusHits = 0;
             timeLeft = 30;
             gameRunning = true;
+            speedMult = 1.0;
+            lastSpeedScore = 0;
             activeHoles.clear();
             resetStickers();
             document.getElementById('score').textContent = '0';
@@ -696,10 +700,10 @@
 
         function scheduleSpawn() {
             if (!gameRunning) return;
-            // Speed increases as time passes
+            // Speed increases as time passes + score-based speedMult
             const elapsed = 30 - timeLeft;
-            const minDelay = Math.max(400, 800 - elapsed * 15);
-            const maxDelay = Math.max(700, 1200 - elapsed * 15);
+            const minDelay = Math.max(400, (800 - elapsed * 15) * speedMult);
+            const maxDelay = Math.max(700, (1200 - elapsed * 15) * speedMult);
             const delay = minDelay + Math.random() * (maxDelay - minDelay);
 
             spawnTimer = setTimeout(() => {
@@ -737,9 +741,9 @@
             creature.textContent = emoji;
             creature.className = 'creature show';
 
-            // How long it stays visible (gets shorter over time)
+            // How long it stays visible (gets shorter over time + speedMult)
             const elapsed = 30 - timeLeft;
-            const stayTime = Math.max(800, 1800 - elapsed * 30);
+            const stayTime = Math.max(600, (1800 - elapsed * 30) * speedMult);
 
             const timeout = setTimeout(() => {
                 hideCreature(holeIdx);
@@ -790,6 +794,11 @@
                 creature.className = 'creature show caught';
                 playCatchSound();
                 checkStickerMilestone(score);
+                // Speed up every 5 points
+                while (lastSpeedScore < Math.floor(score / 5)) {
+                    speedMult *= 0.97;
+                    lastSpeedScore++;
+                }
 
                 // Show score popup
                 showScorePopup(cx, cy, `+${points}`, type === 'bonus' ? '#ffd700' : '#5ec75e');

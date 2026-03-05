@@ -277,10 +277,11 @@
 
         let score = 0, popped = 0, timeLeft = 30, combo = 0, lastColor = '';
         let gameRunning = false, gameTimer, spawnTimer;
+        let speedMult = 1.0, lastSpeedScore = 0;
 
         function startGame() {
             score = 0; popped = 0; timeLeft = 30; combo = 0; lastColor = '';
-            gameRunning = true;
+            gameRunning = true; speedMult = 1.0; lastSpeedScore = 0;
             earnedStickers = []; lastStickerIndex = -1;
             document.getElementById('sticker-bar').innerHTML = '<span class="sticker-label" id="sticker-label">스티커를 모아봐요!</span>';
             document.getElementById('score').textContent = '0';
@@ -332,7 +333,7 @@
             el.style.left = x + 'px';
             el.style.bottom = '-60px';
 
-            const speed = 3 + Math.random() * 3;
+            const speed = (3 + Math.random() * 3) * speedMult;
             el.style.animationDuration = speed + 's';
 
             const handler = (e) => {
@@ -385,6 +386,11 @@
                 popped++;
                 document.getElementById('score').textContent = score;
                 checkStickerMilestone(score);
+                // Speed up every 5 points
+                while (lastSpeedScore < Math.floor(score / 5)) {
+                    speedMult *= 0.97;
+                    lastSpeedScore++;
+                }
 
                 if (type === 'bonus') playBonusSound(); else playPopSound();
                 showPopEffect(el, '✨');

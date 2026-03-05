@@ -7,7 +7,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <title>HO_GAME - 한글 따라쓰기</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Jua&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Nanum Pen Script', cursive;
@@ -149,6 +149,43 @@
             100% { opacity: 0; transform: translate(var(--cx), var(--cy)) rotate(var(--cr)) scale(0.5); }
         }
 
+        /* Stroke Guide Panel */
+        .stroke-guide {
+            display: flex;
+            gap: 3px;
+            padding: 6px 8px;
+            background: white;
+            border-radius: 12px;
+            border: 3px solid #f0d8b0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            margin: 4px 0;
+            overflow-x: auto;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            max-width: 380px;
+        }
+        .stroke-guide canvas {
+            border-radius: 6px;
+            border: 2px solid #eee;
+            background: #fafafa;
+            flex-shrink: 0;
+        }
+        .stroke-guide .jamo-separator {
+            width: 2px;
+            height: 28px;
+            background: #e0e0e0;
+            border-radius: 1px;
+            margin: 0 2px;
+            flex-shrink: 0;
+        }
+        .stroke-guide-label {
+            font-size: 13px;
+            color: #bbb;
+            text-align: center;
+            margin: 0;
+        }
+
         @media (max-width: 380px) {
             .pen-dot { width: 24px; height: 24px; }
             .tool-btn { padding: 6px 14px; font-size: 18px; }
@@ -184,6 +221,9 @@
     </div>
 
     <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+
+    <p class="stroke-guide-label">획순 가이드 ✍️</p>
+    <div class="stroke-guide" id="stroke-guide"></div>
 
     <div class="canvas-wrap" id="canvas-wrap">
         <canvas id="trace-canvas"></canvas>
@@ -394,6 +434,216 @@
             });
         });
 
+        // ============ Hangul Decomposition & Stroke Guide ============
+        const CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+        const JUNG = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
+        const JONG = ['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+
+        function decomposeHangul(char) {
+            const code = char.charCodeAt(0) - 0xAC00;
+            if (code < 0 || code > 11171) return null;
+            return {
+                cho: Math.floor(code / 588),
+                jung: Math.floor((code % 588) / 28),
+                jong: code % 28
+            };
+        }
+
+        // Stroke data: array of [x1,y1, x2,y2] normalized 0~1
+        // Each sub-array is one stroke (start→end)
+        const JAMO_STROKES = {
+            'ㄱ': [[0.2,0.3, 0.8,0.3],[0.8,0.3, 0.8,0.8]],
+            'ㄲ': [[0.1,0.3, 0.45,0.3],[0.45,0.3, 0.45,0.8],[0.55,0.3, 0.9,0.3],[0.9,0.3, 0.9,0.8]],
+            'ㄴ': [[0.2,0.2, 0.2,0.8],[0.2,0.8, 0.8,0.8]],
+            'ㄷ': [[0.2,0.2, 0.8,0.2],[0.2,0.2, 0.2,0.8],[0.2,0.8, 0.8,0.8]],
+            'ㄸ': [[0.1,0.2, 0.45,0.2],[0.1,0.2, 0.1,0.8],[0.1,0.8, 0.45,0.8],[0.55,0.2, 0.9,0.2],[0.55,0.2, 0.55,0.8],[0.55,0.8, 0.9,0.8]],
+            'ㄹ': [[0.2,0.15, 0.8,0.15],[0.8,0.15, 0.8,0.38],[0.8,0.38, 0.2,0.38],[0.2,0.38, 0.2,0.62],[0.2,0.62, 0.8,0.62],[0.2,0.85, 0.8,0.85]],
+            'ㅁ': [[0.2,0.2, 0.2,0.8],[0.2,0.2, 0.8,0.2],[0.8,0.2, 0.8,0.8],[0.2,0.8, 0.8,0.8]],
+            'ㅂ': [[0.2,0.15, 0.2,0.65],[0.8,0.15, 0.8,0.65],[0.2,0.4, 0.8,0.4],[0.2,0.65, 0.8,0.65],[0.5,0.65, 0.5,0.88]],
+            'ㅃ': [[0.08,0.15, 0.08,0.65],[0.42,0.15, 0.42,0.65],[0.08,0.4, 0.42,0.4],[0.08,0.65, 0.42,0.65],[0.58,0.15, 0.58,0.65],[0.92,0.15, 0.92,0.65],[0.58,0.4, 0.92,0.4],[0.58,0.65, 0.92,0.65]],
+            'ㅅ': [[0.5,0.2, 0.2,0.8],[0.5,0.2, 0.8,0.8]],
+            'ㅆ': [[0.3,0.2, 0.1,0.8],[0.3,0.2, 0.5,0.8],[0.7,0.2, 0.5,0.8],[0.7,0.2, 0.9,0.8]],
+            'ㅇ': [[0.5,0.2, 0.5,0.2]], // circle - special
+            'ㅈ': [[0.2,0.2, 0.8,0.2],[0.5,0.35, 0.2,0.85],[0.5,0.35, 0.8,0.85]],
+            'ㅉ': [[0.1,0.2, 0.45,0.2],[0.28,0.35, 0.1,0.85],[0.28,0.35, 0.45,0.85],[0.55,0.2, 0.9,0.2],[0.73,0.35, 0.55,0.85],[0.73,0.35, 0.9,0.85]],
+            'ㅊ': [[0.5,0.1, 0.5,0.1],[0.2,0.3, 0.8,0.3],[0.5,0.45, 0.2,0.88],[0.5,0.45, 0.8,0.88]],
+            'ㅋ': [[0.2,0.2, 0.8,0.2],[0.8,0.2, 0.8,0.8],[0.2,0.5, 0.8,0.5]],
+            'ㅌ': [[0.2,0.15, 0.8,0.15],[0.2,0.15, 0.2,0.85],[0.2,0.5, 0.7,0.5],[0.2,0.85, 0.8,0.85]],
+            'ㅍ': [[0.2,0.2, 0.8,0.2],[0.35,0.2, 0.35,0.8],[0.65,0.2, 0.65,0.8],[0.2,0.8, 0.8,0.8]],
+            'ㅎ': [[0.5,0.1, 0.5,0.1],[0.2,0.3, 0.8,0.3],[0.5,0.6, 0.5,0.6]], // dot, line, circle
+            // Vowels
+            'ㅏ': [[0.35,0.1, 0.35,0.9],[0.35,0.45, 0.8,0.45]],
+            'ㅐ': [[0.25,0.1, 0.25,0.9],[0.25,0.45, 0.55,0.45],[0.7,0.1, 0.7,0.9]],
+            'ㅑ': [[0.35,0.1, 0.35,0.9],[0.35,0.3, 0.8,0.3],[0.35,0.6, 0.8,0.6]],
+            'ㅒ': [[0.2,0.1, 0.2,0.9],[0.2,0.3, 0.5,0.3],[0.2,0.6, 0.5,0.6],[0.7,0.1, 0.7,0.9]],
+            'ㅓ': [[0.65,0.1, 0.65,0.9],[0.2,0.45, 0.65,0.45]],
+            'ㅔ': [[0.3,0.1, 0.3,0.9],[0.75,0.1, 0.75,0.9],[0.45,0.45, 0.75,0.45]],
+            'ㅕ': [[0.65,0.1, 0.65,0.9],[0.2,0.3, 0.65,0.3],[0.2,0.6, 0.65,0.6]],
+            'ㅖ': [[0.3,0.1, 0.3,0.9],[0.2,0.3, 0.55,0.3],[0.2,0.6, 0.55,0.6],[0.75,0.1, 0.75,0.9]],
+            'ㅗ': [[0.5,0.3, 0.5,0.65],[0.15,0.65, 0.85,0.65]],
+            'ㅘ': [[0.4,0.25, 0.4,0.55],[0.1,0.55, 0.65,0.55],[0.75,0.15, 0.75,0.85],[0.75,0.5, 0.9,0.5]],
+            'ㅙ': [[0.35,0.25, 0.35,0.55],[0.1,0.55, 0.55,0.55],[0.65,0.15, 0.65,0.85],[0.65,0.5, 0.8,0.5],[0.9,0.15, 0.9,0.85]],
+            'ㅚ': [[0.4,0.25, 0.4,0.55],[0.1,0.55, 0.65,0.55],[0.8,0.15, 0.8,0.85]],
+            'ㅛ': [[0.3,0.3, 0.3,0.65],[0.7,0.3, 0.7,0.65],[0.15,0.65, 0.85,0.65]],
+            'ㅜ': [[0.15,0.35, 0.85,0.35],[0.5,0.35, 0.5,0.7]],
+            'ㅝ': [[0.2,0.15, 0.2,0.85],[0.2,0.5, 0.45,0.5],[0.6,0.45, 0.9,0.45],[0.6,0.45, 0.6,0.75]],
+            'ㅞ': [[0.15,0.15, 0.15,0.85],[0.15,0.5, 0.35,0.5],[0.55,0.45, 0.75,0.45],[0.55,0.45, 0.55,0.75],[0.88,0.15, 0.88,0.85]],
+            'ㅟ': [[0.2,0.35, 0.6,0.35],[0.4,0.35, 0.4,0.7],[0.8,0.15, 0.8,0.85]],
+            'ㅠ': [[0.15,0.35, 0.85,0.35],[0.35,0.35, 0.35,0.7],[0.65,0.35, 0.65,0.7]],
+            'ㅡ': [[0.15,0.5, 0.85,0.5]],
+            'ㅢ': [[0.15,0.5, 0.65,0.5],[0.8,0.15, 0.8,0.85]],
+            'ㅣ': [[0.5,0.1, 0.5,0.9]],
+            // Compound jongseong (display as combined)
+            'ㄳ': [[0.15,0.3, 0.45,0.3],[0.45,0.3, 0.45,0.8],[0.65,0.25, 0.55,0.8],[0.65,0.25, 0.85,0.8]],
+            'ㄵ': [[0.1,0.2, 0.1,0.8],[0.1,0.8, 0.4,0.8],[0.55,0.2, 0.85,0.2],[0.7,0.35, 0.55,0.8],[0.7,0.35, 0.85,0.8]],
+            'ㄶ': [[0.1,0.2, 0.1,0.8],[0.1,0.8, 0.4,0.8],[0.7,0.5, 0.7,0.5]],
+            'ㄺ': [[0.05,0.15, 0.45,0.15],[0.45,0.15, 0.45,0.38],[0.45,0.38, 0.05,0.38],[0.05,0.38, 0.05,0.6],[0.05,0.6, 0.45,0.6],[0.05,0.85, 0.45,0.85],[0.55,0.3, 0.95,0.3],[0.95,0.3, 0.95,0.8]],
+            'ㄻ': [[0.05,0.15, 0.45,0.15],[0.45,0.15, 0.45,0.38],[0.45,0.38, 0.05,0.38],[0.05,0.38, 0.05,0.6],[0.05,0.6, 0.45,0.6],[0.05,0.85, 0.45,0.85],[0.55,0.3, 0.55,0.8],[0.55,0.3, 0.95,0.3],[0.95,0.3, 0.95,0.8],[0.55,0.8, 0.95,0.8]],
+            'ㄼ': [[0.05,0.15, 0.45,0.15],[0.45,0.15, 0.45,0.38],[0.45,0.38, 0.05,0.38],[0.05,0.38, 0.05,0.6],[0.05,0.6, 0.45,0.6],[0.05,0.85, 0.45,0.85],[0.55,0.2, 0.55,0.65],[0.95,0.2, 0.95,0.65],[0.55,0.42, 0.95,0.42],[0.55,0.65, 0.95,0.65],[0.75,0.65, 0.75,0.85]],
+            'ㄽ': [[0.05,0.15, 0.45,0.15],[0.45,0.15, 0.45,0.38],[0.45,0.38, 0.05,0.38],[0.05,0.38, 0.05,0.6],[0.05,0.6, 0.45,0.6],[0.05,0.85, 0.45,0.85],[0.7,0.25, 0.55,0.8],[0.7,0.25, 0.9,0.8]],
+            'ㄾ': [[0.05,0.15, 0.45,0.15],[0.45,0.15, 0.45,0.38],[0.45,0.38, 0.05,0.38],[0.05,0.38, 0.05,0.6],[0.05,0.6, 0.45,0.6],[0.05,0.85, 0.45,0.85],[0.55,0.2, 0.95,0.2],[0.55,0.2, 0.55,0.85],[0.55,0.52, 0.85,0.52],[0.55,0.85, 0.95,0.85]],
+            'ㄿ': [[0.05,0.15, 0.45,0.15],[0.45,0.15, 0.45,0.38],[0.45,0.38, 0.05,0.38],[0.05,0.38, 0.05,0.6],[0.05,0.6, 0.45,0.6],[0.05,0.85, 0.45,0.85],[0.55,0.25, 0.95,0.25],[0.68,0.25, 0.68,0.8],[0.82,0.25, 0.82,0.8],[0.55,0.8, 0.95,0.8]],
+            'ㅀ': [[0.05,0.15, 0.45,0.15],[0.45,0.15, 0.45,0.38],[0.45,0.38, 0.05,0.38],[0.05,0.38, 0.05,0.6],[0.05,0.6, 0.45,0.6],[0.05,0.85, 0.45,0.85],[0.75,0.25, 0.75,0.25],[0.55,0.42, 0.95,0.42],[0.75,0.65, 0.75,0.65]],
+            'ㅄ': [[0.1,0.2, 0.1,0.65],[0.4,0.2, 0.4,0.65],[0.1,0.42, 0.4,0.42],[0.1,0.65, 0.4,0.65],[0.65,0.25, 0.55,0.8],[0.65,0.25, 0.85,0.8]],
+        };
+
+        const JAMO_COLORS = { cho: '#4a90d9', jung: '#d94a4a', jong: '#2eaa5e' };
+
+        function drawStrokeGuide(word) {
+            const guide = document.getElementById('stroke-guide');
+            guide.innerHTML = '';
+            const boxSize = 40;
+
+            for (let ci = 0; ci < word.length; ci++) {
+                const d = decomposeHangul(word[ci]);
+                if (!d) continue;
+
+                const parts = [];
+                parts.push({ jamo: CHO[d.cho], type: 'cho' });
+                parts.push({ jamo: JUNG[d.jung], type: 'jung' });
+                if (d.jong > 0) parts.push({ jamo: JONG[d.jong], type: 'jong' });
+
+                if (ci > 0) {
+                    const sep = document.createElement('div');
+                    sep.className = 'jamo-separator';
+                    guide.appendChild(sep);
+                }
+
+                parts.forEach((p, pi) => {
+                    const cvs = document.createElement('canvas');
+                    cvs.width = boxSize; cvs.height = boxSize;
+                    cvs.style.width = boxSize + 'px'; cvs.style.height = boxSize + 'px';
+                    const ctx = cvs.getContext('2d');
+                    const color = JAMO_COLORS[p.type];
+
+                    // Draw jamo character lightly
+                    ctx.font = `bold 22px 'Jua', sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+                    ctx.fillText(p.jamo, boxSize/2, boxSize/2);
+
+                    // Draw strokes
+                    const strokes = JAMO_STROKES[p.jamo];
+                    if (strokes) {
+                        const isCircle = (p.jamo === 'ㅇ' || (p.jamo === 'ㅎ' && strokes.length >= 1));
+                        if (p.jamo === 'ㅇ') {
+                            // Draw circle with direction arrow
+                            ctx.beginPath();
+                            ctx.arc(boxSize/2, boxSize/2, boxSize*0.28, 0, Math.PI*1.8);
+                            ctx.strokeStyle = color;
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                            // Arrow at end
+                            const endAngle = Math.PI*1.8;
+                            const r = boxSize*0.28;
+                            const ex = boxSize/2 + Math.cos(endAngle)*r;
+                            const ey = boxSize/2 + Math.sin(endAngle)*r;
+                            drawMiniArrowhead(ctx, boxSize/2 + Math.cos(endAngle-0.3)*r, boxSize/2 + Math.sin(endAngle-0.3)*r, ex, ey, color, 5);
+                            // Number
+                            ctx.fillStyle = color;
+                            ctx.font = 'bold 10px sans-serif';
+                            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                            ctx.fillText('①', boxSize/2, boxSize*0.15);
+                        } else if (p.jamo === 'ㅎ') {
+                            // dot, line, circle
+                            // Dot
+                            ctx.beginPath();
+                            ctx.arc(boxSize*0.5, boxSize*0.12, 3, 0, Math.PI*2);
+                            ctx.fillStyle = color; ctx.fill();
+                            ctx.fillStyle = color; ctx.font = 'bold 8px sans-serif';
+                            ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+                            ctx.fillText('①', boxSize*0.6, boxSize*0.12);
+                            // Line
+                            drawStrokeLine(ctx, strokes[1], boxSize, color, '②');
+                            // Circle
+                            ctx.beginPath();
+                            ctx.arc(boxSize/2, boxSize*0.72, boxSize*0.18, 0, Math.PI*1.8);
+                            ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+                            ctx.fillStyle = color; ctx.font = 'bold 8px sans-serif';
+                            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                            ctx.fillText('③', boxSize*0.5, boxSize*0.56);
+                        } else if (p.jamo === 'ㅊ') {
+                            // dot, line, two legs
+                            ctx.beginPath();
+                            ctx.arc(boxSize*0.5, boxSize*0.12, 3, 0, Math.PI*2);
+                            ctx.fillStyle = color; ctx.fill();
+                            ctx.fillStyle = color; ctx.font = 'bold 8px sans-serif';
+                            ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+                            ctx.fillText('①', boxSize*0.6, boxSize*0.12);
+                            for (let si = 1; si < strokes.length; si++) {
+                                drawStrokeLine(ctx, strokes[si], boxSize, color, String.fromCharCode(0x2460 + si));
+                            }
+                        } else {
+                            strokes.forEach((s, si) => {
+                                drawStrokeLine(ctx, s, boxSize, color, String.fromCharCode(0x2460 + si));
+                            });
+                        }
+                    }
+
+                    guide.appendChild(cvs);
+                });
+            }
+        }
+
+        function drawStrokeLine(ctx, s, boxSize, color, numChar) {
+            const x1 = s[0]*boxSize, y1 = s[1]*boxSize;
+            const x2 = s[2]*boxSize, y2 = s[3]*boxSize;
+
+            // Line
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Arrowhead
+            drawMiniArrowhead(ctx, x1, y1, x2, y2, color, 5);
+
+            // Number at start
+            ctx.fillStyle = color;
+            ctx.font = 'bold 8px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const dx = x2-x1, dy = y2-y1;
+            const len = Math.sqrt(dx*dx+dy*dy) || 1;
+            const ox = -dy/len * 7, oy = dx/len * 7;
+            ctx.fillText(numChar, x1 + ox, y1 + oy);
+        }
+
+        function drawMiniArrowhead(ctx, x1, y1, x2, y2, color, size) {
+            const angle = Math.atan2(y2-y1, x2-x1);
+            ctx.beginPath();
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - size*Math.cos(angle-0.5), y2 - size*Math.sin(angle-0.5));
+            ctx.lineTo(x2 - size*Math.cos(angle+0.5), y2 - size*Math.sin(angle+0.5));
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+
         // ============ Canvas Setup ============
         const traceCanvas = document.getElementById('trace-canvas');
         const drawCanvas = document.getElementById('draw-canvas');
@@ -448,25 +698,33 @@
         function drawDottedWord(word) {
             traceCtx.clearRect(0, 0, cw, ch);
 
-            // Calculate font size to fit
-            let fontSize = Math.min(120, Math.floor((cw - 40) / word.length * 1.1));
-            fontSize = Math.min(fontSize, ch - 40);
+            // Calculate font size to fit - bigger for readability
+            let fontSize = Math.min(140, Math.floor((cw - 24) / word.length * 1.2));
+            fontSize = Math.min(fontSize, ch - 24);
+
+            const cx = cw / 2, cy = ch / 2;
 
             traceCtx.save();
-            traceCtx.font = `bold ${fontSize}px 'Nanum Pen Script', cursive`;
+            // Use Jua font - clean, round, kid-friendly Korean font
+            traceCtx.font = `${fontSize}px 'Jua', sans-serif`;
             traceCtx.textAlign = 'center';
             traceCtx.textBaseline = 'middle';
 
-            // Draw dashed outline
-            traceCtx.setLineDash([6, 6]);
-            traceCtx.lineWidth = 2.5;
-            traceCtx.strokeStyle = '#ccbbaa';
-            traceCtx.strokeText(word, cw / 2, ch / 2);
+            // 1) Solid light fill as clear shape guide
+            traceCtx.fillStyle = 'rgba(220, 200, 180, 0.25)';
+            traceCtx.fillText(word, cx, cy);
 
-            // Draw very light fill as guide
+            // 2) Solid thin outline for clear letter shape
+            traceCtx.lineWidth = 1.5;
+            traceCtx.strokeStyle = 'rgba(180, 160, 140, 0.35)';
             traceCtx.setLineDash([]);
-            traceCtx.fillStyle = 'rgba(200, 185, 170, 0.15)';
-            traceCtx.fillText(word, cw / 2, ch / 2);
+            traceCtx.strokeText(word, cx, cy);
+
+            // 3) Dotted overlay with wide spacing - visible dots
+            traceCtx.setLineDash([2, 10]);
+            traceCtx.lineWidth = 3;
+            traceCtx.strokeStyle = '#998877';
+            traceCtx.strokeText(word, cx, cy);
 
             traceCtx.restore();
 
@@ -592,6 +850,7 @@
             document.getElementById('word-label').textContent = currentWord;
 
             drawDottedWord(currentWord);
+            drawStrokeGuide(currentWord);
         }
 
         // Event listeners

@@ -624,6 +624,7 @@
         let maxRound = 0;
         let showingIndex = 0;
         let showTimer = null;
+        let speedMult = 1.0;
 
         const buttons = document.querySelectorAll('.color-btn');
 
@@ -658,6 +659,7 @@
             round = 0;
             lives = 2;
             maxRound = 0;
+            speedMult = 1.0;
             gameState = 'idle';
             resetStickers();
             document.getElementById('round').textContent = '0';
@@ -703,8 +705,8 @@
             lightButton(sequence[showingIndex], 450);
             showingIndex++;
 
-            // Speed increases with round
-            const delay = Math.max(400, 700 - round * 20);
+            // Speed increases with round + speedMult
+            const delay = Math.max(300, (700 - round * 20) * speedMult);
             showTimer = setTimeout(() => showSequence(), delay);
         }
 
@@ -723,6 +725,7 @@
                     playSuccessSound();
                     checkStickerMilestone(round);
                     showEncourage(false);
+                    speedMult *= 0.97; // 3% faster each round
 
                     // Heart explosion every round
                     const board = document.getElementById('color-board');
