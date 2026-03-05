@@ -62,6 +62,14 @@
         .timer-display { font-size: 24px; color: #5588cc; }
         .combo-display { font-size: 22px; color: #ff9900; min-width: 80px; text-align: center; }
 
+        .speed-ctrl {
+            display: flex; align-items: center; gap: 4px;
+            background: white; border-radius: 16px; padding: 2px 8px; border: 2px solid #ddd; font-size: 18px;
+        }
+        .speed-ctrl button { background: none; border: none; font-size: 20px; cursor: pointer; padding: 2px 4px; border-radius: 8px; }
+        .speed-ctrl button:hover { background: #f0f0f0; }
+        .speed-ctrl .speed-label { font-size: 16px; color: #888; min-width: 48px; text-align: center; }
+
         .encourage {
             font-size: 28px; color: #ff7777; min-height: 32px;
             text-align: center; margin: 2px 0;
@@ -200,6 +208,11 @@
         <div class="score-display">점수: <span id="score">0</span></div>
         <div class="timer-display">⏱ <span id="timer">30</span>초</div>
         <div class="combo-display" id="combo"></div>
+        <div class="speed-ctrl">
+            <button onclick="changeSpeed(-1)">🐢</button>
+            <span class="speed-label" id="speed-label">속도 3</span>
+            <button onclick="changeSpeed(1)">🐇</button>
+        </div>
     </div>
     <div class="sticker-bar" id="sticker-bar">
         <span class="sticker-label" id="sticker-label">스티커를 모아봐요!</span>
@@ -277,11 +290,14 @@
 
         let score = 0, popped = 0, timeLeft = 30, combo = 0, lastColor = '';
         let gameRunning = false, gameTimer, spawnTimer;
-        let speedMult = 1.0, lastSpeedScore = 0;
+        let speedMult = 1.0;
+        const SPEED_LEVELS = [0.5, 0.7, 1.0, 1.3, 1.6];
+        let speedLevel = 2;
 
         function startGame() {
             score = 0; popped = 0; timeLeft = 30; combo = 0; lastColor = '';
-            gameRunning = true; speedMult = 1.0; lastSpeedScore = 0;
+            gameRunning = true; speedMult = 1.0; speedLevel = 2;
+            document.getElementById('speed-label').textContent = '속도 3';
             earnedStickers = []; lastStickerIndex = -1;
             document.getElementById('sticker-bar').innerHTML = '<span class="sticker-label" id="sticker-label">스티커를 모아봐요!</span>';
             document.getElementById('score').textContent = '0';
@@ -386,11 +402,6 @@
                 popped++;
                 document.getElementById('score').textContent = score;
                 checkStickerMilestone(score);
-                // Speed up every 5 points
-                while (lastSpeedScore < Math.floor(score / 5)) {
-                    speedMult *= 0.97;
-                    lastSpeedScore++;
-                }
 
                 if (type === 'bonus') playBonusSound(); else playPopSound();
                 showPopEffect(el, '✨');
@@ -437,6 +448,12 @@
         function restartGame() {
             document.getElementById('modal').classList.remove('show');
             startGame();
+        }
+
+        function changeSpeed(dir) {
+            speedLevel = Math.max(0, Math.min(4, speedLevel + dir));
+            speedMult = SPEED_LEVELS[speedLevel];
+            document.getElementById('speed-label').textContent = '속도 ' + (speedLevel + 1);
         }
 
         document.body.addEventListener('touchmove', (e) => {

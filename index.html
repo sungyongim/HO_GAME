@@ -455,6 +455,23 @@
             box-shadow: 0 4px 15px rgba(255,107,157,0.4);
         }
 
+        .hotris-speed-ctrl {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: white;
+            border-radius: 16px;
+            padding: 2px 8px;
+            border: 2px solid #ddd;
+            font-size: 18px;
+        }
+        .hotris-speed-ctrl button {
+            background: none; border: none; font-size: 20px; cursor: pointer; padding: 2px 4px;
+            border-radius: 8px; transition: background 0.15s;
+        }
+        .hotris-speed-ctrl button:hover { background: #f0f0f0; }
+        .hotris-speed-ctrl .speed-label { font-size: 16px; color: #888; min-width: 48px; text-align: center; }
+
         /* HOtris Game Styles */
         #hotris-game {
             display: none;
@@ -918,6 +935,10 @@
                 font-size: 14px;
             }
 
+            .hotris-speed-ctrl { padding: 1px 6px; }
+            .hotris-speed-ctrl button { font-size: 16px; }
+            .hotris-speed-ctrl .speed-label { font-size: 13px; min-width: 40px; }
+
             /* HOtris Mobile - fit 393x852 viewport */
             #hotris-container {
                 flex-direction: column;
@@ -1177,6 +1198,11 @@
         <div id="hotris-game">
             <div class="title-row">
                 <div class="score-display">점수: <span id="tetris-score">0</span></div>
+                <div class="hotris-speed-ctrl">
+                    <button onclick="changeTetrisSpeed(-1)">🐢</button>
+                    <span class="speed-label" id="tetris-speed-label">속도 3</span>
+                    <button onclick="changeTetrisSpeed(1)">🐇</button>
+                </div>
                 <button class="help-btn" onclick="document.getElementById('hotris-help').classList.add('show')">사용법</button>
             </div>
             <div id="encourage-text" class="encourage-text"></div>
@@ -1811,7 +1837,8 @@
         let tetrisGameStarted = false;
         let tetrisTimer = null;
         let tetrisSpeedMult = 1.0;
-        let tetrisLastSpeedScore = 0;
+        const TETRIS_SPEED_LEVELS = [0.5, 0.7, 1.0, 1.3, 1.6];
+        let tetrisSpeedLevel = 2;
 
         function initTetrisBoard() {
             const board = document.getElementById('tetris-board');
@@ -1953,7 +1980,6 @@
                 document.getElementById('tetris-score').textContent = tetrisScore;
                 playMatchSound();
                 showEncourageMsg(lines);
-                updateTetrisSpeed();
             }
         }
 
@@ -2036,16 +2062,14 @@
             tetrisTimer = setInterval(dropTetrisPiece, interval);
         }
 
-        function updateTetrisSpeed() {
-            // Every 10 points of score (based on 100-point line clears), speed up 3%
-            const speedThreshold = Math.floor(tetrisScore / 1000);
-            while (tetrisLastSpeedScore < speedThreshold) {
-                tetrisSpeedMult *= 0.97;
-                tetrisLastSpeedScore++;
+        function changeTetrisSpeed(dir) {
+            tetrisSpeedLevel = Math.max(0, Math.min(4, tetrisSpeedLevel + dir));
+            tetrisSpeedMult = TETRIS_SPEED_LEVELS[tetrisSpeedLevel];
+            document.getElementById('tetris-speed-label').textContent = '속도 ' + (tetrisSpeedLevel + 1);
+            if (tetrisGameStarted) {
+                clearInterval(tetrisTimer);
+                startTetrisTimer();
             }
-            // Restart timer with new speed
-            clearInterval(tetrisTimer);
-            startTetrisTimer();
         }
 
         // ============ Game Control ============
@@ -2104,7 +2128,8 @@
 
             tetrisScore = 0;
             tetrisSpeedMult = 1.0;
-            tetrisLastSpeedScore = 0;
+            tetrisSpeedLevel = 2;
+            document.getElementById('tetris-speed-label').textContent = '속도 3';
             tetrisGameStarted = false;
             document.getElementById('tetris-score').textContent = '0';
             initTetrisBoard();
@@ -2157,7 +2182,8 @@
             } else {
                 tetrisScore = 0;
                 tetrisSpeedMult = 1.0;
-                tetrisLastSpeedScore = 0;
+                tetrisSpeedLevel = 2;
+                document.getElementById('tetris-speed-label').textContent = '속도 3';
                 document.getElementById('tetris-score').textContent = '0';
                 document.getElementById('encourage-text').textContent = '';
                 initTetrisBoard();

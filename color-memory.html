@@ -73,6 +73,23 @@
             color: #ff6b9d;
         }
 
+        .speed-ctrl {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: white;
+            border-radius: 16px;
+            padding: 2px 8px;
+            border: 2px solid #ddd;
+            font-size: 18px;
+        }
+        .speed-ctrl button {
+            background: none; border: none; font-size: 20px; cursor: pointer; padding: 2px 4px;
+            border-radius: 8px; transition: background 0.15s;
+        }
+        .speed-ctrl button:hover { background: #f0f0f0; }
+        .speed-ctrl .speed-label { font-size: 16px; color: #888; min-width: 48px; text-align: center; }
+
         .status-text {
             font-size: 28px;
             color: #888;
@@ -372,6 +389,9 @@
             .back-btn { padding: 6px 12px; font-size: 14px; top: 6px; left: 6px; }
             .score-display { font-size: 22px; }
             .lives-display { font-size: 20px; }
+            .speed-ctrl { padding: 1px 6px; }
+            .speed-ctrl button { font-size: 16px; }
+            .speed-ctrl .speed-label { font-size: 13px; min-width: 40px; }
             .status-text { font-size: 22px; min-height: 28px; margin: 4px 0; }
             .encourage { font-size: 24px; min-height: 28px; margin: 4px 0; }
             .help-btn { font-size: 16px; padding: 2px 10px; }
@@ -429,6 +449,11 @@
     <div class="top-bar">
         <div class="score-display">라운드: <span id="round">0</span></div>
         <div class="lives-display">기회: <span id="lives">❤️❤️</span></div>
+        <div class="speed-ctrl">
+            <button onclick="changeSpeed(-1)">🐢</button>
+            <span class="speed-label" id="speed-label">속도 3</span>
+            <button onclick="changeSpeed(1)">🐇</button>
+        </div>
     </div>
 
     <div class="sticker-bar" id="sticker-bar">
@@ -625,6 +650,8 @@
         let showingIndex = 0;
         let showTimer = null;
         let speedMult = 1.0;
+        const SPEED_LEVELS = [0.5, 0.7, 1.0, 1.3, 1.6];
+        let speedLevel = 2;
 
         const buttons = document.querySelectorAll('.color-btn');
 
@@ -660,6 +687,8 @@
             lives = 2;
             maxRound = 0;
             speedMult = 1.0;
+            speedLevel = 2;
+            document.getElementById('speed-label').textContent = '속도 3';
             gameState = 'idle';
             resetStickers();
             document.getElementById('round').textContent = '0';
@@ -725,7 +754,6 @@
                     playSuccessSound();
                     checkStickerMilestone(round);
                     showEncourage(false);
-                    speedMult *= 0.97; // 3% faster each round
 
                     // Heart explosion every round
                     const board = document.getElementById('color-board');
@@ -792,6 +820,12 @@
         function restartGame() {
             document.getElementById('game-over-modal').classList.remove('show');
             startGame();
+        }
+
+        function changeSpeed(dir) {
+            speedLevel = Math.max(0, Math.min(4, speedLevel + dir));
+            speedMult = SPEED_LEVELS[speedLevel];
+            document.getElementById('speed-label').textContent = '속도 ' + (speedLevel + 1);
         }
 
         // Prevent scroll
