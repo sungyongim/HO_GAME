@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>HO_GAME - 한글 따라쓰기</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Nanum Pen Script', cursive;
+            background: linear-gradient(135deg, #fff8f0 0%, #f0f8ff 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 4px;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .back-btn {
+            position: fixed; top: 6px; left: 6px;
+            background: white; border: 3px solid #ddd; border-radius: 12px;
+            padding: 6px 12px; font-family: 'Nanum Pen Script', cursive;
+            font-size: 16px; cursor: pointer; z-index: 50;
+            text-decoration: none; color: black;
+        }
+        .title-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
+        h1 { font-size: 28px; color: #e8783a; text-shadow: 2px 2px 0 #ffe66d; margin-bottom: 2px; }
+        .help-btn {
+            border-radius: 12px; border: 3px solid #e8783a; background: white;
+            color: #e8783a; font-family: 'Nanum Pen Script', cursive;
+            font-size: 16px; cursor: pointer; padding: 2px 10px;
+        }
+        .help-btn:hover { background: #e8783a; color: white; }
+        .help-overlay {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+            justify-content: center; align-items: center; z-index: 150;
+        }
+        .help-overlay.show { display: flex; }
+        .help-box {
+            background: white; border-radius: 20px; padding: 24px;
+            max-width: 320px; width: 90%; box-shadow: 0 16px 48px rgba(0,0,0,0.25); text-align: left;
+        }
+        .help-box h3 { font-size: 26px; color: #e8783a; margin-bottom: 10px; text-align: center; }
+        .help-box p { font-size: 20px; color: #555; line-height: 1.5; margin: 5px 0; }
+        .help-close {
+            display: block; margin: 14px auto 0; padding: 8px 28px; border: none;
+            border-radius: 12px; background: #e8783a; color: white;
+            font-family: 'Nanum Pen Script', cursive; font-size: 20px; cursor: pointer;
+        }
+
+        .word-display {
+            font-size: 22px; color: #888; margin: 4px 0; min-height: 28px; text-align: center;
+        }
+        .category-tag {
+            display: inline-block; padding: 2px 12px; border-radius: 20px;
+            background: #fff0e0; color: #e8783a; font-size: 16px; border: 2px solid #f0d0a0;
+        }
+
+        .canvas-wrap {
+            position: relative; background: white; border-radius: 16px;
+            border: 4px solid #f0d8b0; box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden; touch-action: none;
+        }
+        #trace-canvas { position: absolute; top: 0; left: 0; }
+        #draw-canvas { position: absolute; top: 0; left: 0; }
+
+        .toolbar {
+            display: flex; gap: 8px; margin: 6px 0; flex-wrap: wrap;
+            justify-content: center; align-items: center;
+        }
+        .tool-btn {
+            padding: 8px 18px; border-radius: 16px; border: 3px solid #e8783a;
+            background: white; font-family: 'Nanum Pen Script', cursive;
+            font-size: 20px; cursor: pointer; transition: all 0.2s; color: #e8783a;
+        }
+        .tool-btn:hover, .tool-btn:active { background: #e8783a; color: white; }
+        .tool-btn.primary { background: #e8783a; color: white; }
+
+        .pen-colors {
+            display: flex; gap: 5px; align-items: center;
+        }
+        .pen-dot {
+            width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+            border: 3px solid transparent; transition: all 0.15s;
+        }
+        .pen-dot.active { border-color: #333; transform: scale(1.2); }
+
+        .encourage {
+            font-size: 32px; color: #e8783a; min-height: 40px;
+            text-align: center; margin: 4px 0; position: relative; z-index: 60;
+        }
+        .encourage.pop { animation: encouragePop 2.5s ease-out forwards; }
+        @keyframes encouragePop {
+            0% { opacity: 0; transform: scale(0.2) rotate(-5deg); }
+            12% { opacity: 1; transform: scale(1.4) rotate(3deg); }
+            25% { transform: scale(1) rotate(0deg); }
+            75% { opacity: 1; }
+            100% { opacity: 0; transform: scale(1.1) translateY(-15px); }
+        }
+
+        .progress-bar {
+            width: 90%; max-width: 360px; height: 14px;
+            background: #eee; border-radius: 7px; overflow: hidden; margin: 4px 0;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, #ffcc00, #e8783a);
+            border-radius: 7px; transition: width 0.3s; width: 0%;
+        }
+
+        .sticker-bar {
+            display: flex; gap: 4px; padding: 4px 10px; background: white;
+            border-radius: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            border: 2px solid #f5e6c8; margin: 3px 0; min-height: 30px;
+            align-items: center; flex-wrap: wrap; justify-content: center;
+        }
+        .sticker { font-size: 18px; animation: stickerPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        @keyframes stickerPop {
+            0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+            70% { transform: scale(1.3) rotate(10deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        .sticker-label { font-size: 14px; color: #ccc; }
+
+        .heart-particle {
+            position: fixed; pointer-events: none; z-index: 200; font-size: 20px;
+            animation: heartBurst var(--duration, 1s) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        @keyframes heartBurst {
+            0% { opacity: 1; transform: translate(0, 0) scale(0.3) rotate(0deg); }
+            20% { opacity: 1; transform: translate(var(--tx20), var(--ty20)) scale(1.2) rotate(var(--rot)); }
+            60% { opacity: 1; transform: translate(var(--tx60), var(--ty60)) scale(1) rotate(var(--rot2)); }
+            100% { opacity: 0; transform: translate(var(--tx100), var(--ty100)) scale(0.5) rotate(var(--rot3)); }
+        }
+
+        /* Confetti */
+        .confetti {
+            position: fixed; pointer-events: none; z-index: 190;
+            width: 10px; height: 10px; border-radius: 2px;
+            animation: confettiFall var(--dur, 1.5s) ease-out forwards;
+        }
+        @keyframes confettiFall {
+            0% { opacity: 1; transform: translate(0,0) rotate(0deg) scale(1); }
+            100% { opacity: 0; transform: translate(var(--cx), var(--cy)) rotate(var(--cr)) scale(0.5); }
+        }
+
+        @media (max-width: 380px) {
+            .pen-dot { width: 24px; height: 24px; }
+            .tool-btn { padding: 6px 14px; font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+    <a class="back-btn" href="index.html">← 뒤로</a>
+    <div class="title-row">
+        <h1>✏️ 한글 따라쓰기</h1>
+        <button class="help-btn" onclick="document.getElementById('help-overlay').classList.add('show')">사용법</button>
+    </div>
+
+    <div class="help-overlay" id="help-overlay" onclick="if(event.target===this)this.classList.remove('show')">
+        <div class="help-box">
+            <h3>✏️ 한글 따라쓰기 규칙</h3>
+            <p>1. 점선 글자를 손가락으로 따라 써요</p>
+            <p>2. 점선 위를 잘 따라가면 진행바가 올라가요</p>
+            <p>3. 다 쓰면 칭찬 메시지가 나와요!</p>
+            <p>4. ✨ 다음 버튼으로 새 단어에 도전!</p>
+            <p>💡 펜 색깔도 바꿀 수 있어요</p>
+            <button class="help-close" onclick="document.getElementById('help-overlay').classList.remove('show')">알겠어요!</button>
+        </div>
+    </div>
+
+    <div class="word-display">
+        <span class="category-tag" id="category"></span>
+        <span id="word-label" style="font-size:24px; margin-left:8px; color:#555;"></span>
+    </div>
+
+    <div class="sticker-bar" id="sticker-bar">
+        <span class="sticker-label" id="sticker-label">스티커를 모아봐요!</span>
+    </div>
+
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+
+    <div class="canvas-wrap" id="canvas-wrap">
+        <canvas id="trace-canvas"></canvas>
+        <canvas id="draw-canvas"></canvas>
+    </div>
+
+    <div class="encourage" id="encourage"></div>
+
+    <div class="toolbar">
+        <div class="pen-colors" id="pen-colors"></div>
+        <button class="tool-btn" onclick="clearDrawing()">🗑️ 지우기</button>
+        <button class="tool-btn primary" onclick="nextWord()">✨ 다음</button>
+    </div>
+
+    <script>
+        // ============ Sound ============
+        let audioCtx = null;
+        function getAudioCtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+        function playTone(f, d, t, v) { try { const c = getAudioCtx(), o = c.createOscillator(), g = c.createGain(); o.type = t||'sine'; o.frequency.value = f; g.gain.value = v||0.15; g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+d); o.connect(g); g.connect(c.destination); o.start(c.currentTime); o.stop(c.currentTime+d); } catch(e){} }
+        function playWriteSound() { playTone(400 + Math.random()*200, 0.04, 'sine', 0.06); }
+        function playSuccessSound() {
+            playTone(523, 0.12, 'sine', 0.18);
+            setTimeout(() => playTone(659, 0.12, 'sine', 0.18), 100);
+            setTimeout(() => playTone(784, 0.15, 'sine', 0.18), 200);
+            setTimeout(() => playTone(1047, 0.25, 'triangle', 0.15), 300);
+        }
+        function playStickerSound() { playTone(880, 0.08, 'sine', 0.12); setTimeout(() => playTone(1318, 0.12, 'triangle', 0.1), 80); }
+
+        // ============ Heart Explosion ============
+        function spawnHeartExplosion(x, y, count) {
+            const hearts = ['❤️','💕','💗','💖','💓','🧡','💛'];
+            for (let i = 0; i < (count||18); i++) {
+                const h = document.createElement('div'); h.className = 'heart-particle';
+                h.textContent = hearts[Math.floor(Math.random()*hearts.length)];
+                const angle = (Math.PI*2*i)/count+(Math.random()-0.5)*0.6;
+                const dist = 50+Math.random()*120;
+                const rot = (Math.random()-0.5)*60, dur = 0.8+Math.random()*0.7, sz = 14+Math.random()*16;
+                h.style.cssText = `left:${x}px;top:${y}px;font-size:${sz}px;--tx20:${Math.cos(angle)*dist*0.3}px;--ty20:${Math.sin(angle)*dist*0.3-20}px;--tx60:${Math.cos(angle)*dist*0.7}px;--ty60:${Math.sin(angle)*dist*0.7-10}px;--tx100:${Math.cos(angle)*dist}px;--ty100:${Math.sin(angle)*dist+30}px;--rot:${rot}deg;--rot2:${rot*1.5}deg;--rot3:${rot*2}deg;--duration:${dur}s;`;
+                document.body.appendChild(h); setTimeout(() => h.remove(), dur*1000+50);
+            }
+        }
+
+        function spawnConfetti(x, y) {
+            const colors = ['#ff6b6b','#ffd93d','#6bcf7f','#74b9ff','#e991e8','#ff9a57','#54e1d0'];
+            for (let i = 0; i < 30; i++) {
+                const c = document.createElement('div'); c.className = 'confetti';
+                c.style.background = colors[Math.floor(Math.random()*colors.length)];
+                c.style.left = x + 'px'; c.style.top = y + 'px';
+                const angle = Math.random()*Math.PI*2;
+                const dist = 40+Math.random()*150;
+                const dur = 0.8+Math.random()*0.8;
+                c.style.cssText += `;left:${x}px;top:${y}px;width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;border-radius:${Math.random()>0.5?'50%':'2px'};background:${colors[Math.floor(Math.random()*colors.length)]};--cx:${Math.cos(angle)*dist}px;--cy:${Math.sin(angle)*dist}px;--cr:${Math.random()*720}deg;--dur:${dur}s;`;
+                document.body.appendChild(c); setTimeout(() => c.remove(), dur*1000+50);
+            }
+        }
+
+        // ============ Sticker ============
+        const STICKER_MILESTONES = [2, 5, 10, 15, 22, 30, 40, 50];
+        const STICKER_ICONS = ['⭐','🌟','🏅','🎖️','🏆','👑','💎','🦄'];
+        let earnedStickers = [], lastStickerIndex = -1, totalWords = 0;
+        function checkSticker() {
+            for (let i = lastStickerIndex+1; i < STICKER_MILESTONES.length; i++) {
+                if (totalWords >= STICKER_MILESTONES[i]) {
+                    lastStickerIndex = i; earnedStickers.push(STICKER_ICONS[i]);
+                    const bar = document.getElementById('sticker-bar');
+                    const lbl = document.getElementById('sticker-label'); if (lbl) lbl.remove();
+                    const sp = document.createElement('span'); sp.className = 'sticker'; sp.textContent = STICKER_ICONS[i]; bar.appendChild(sp);
+                    playStickerSound();
+                    const r = bar.getBoundingClientRect();
+                    spawnHeartExplosion(r.left+r.width/2, r.top+r.height/2, 10);
+                } else break;
+            }
+        }
+
+        // ============ Encouragement ============
+        const ENCOURAGE_MSGS = [
+            '현오~ 훌륭해~!!!',
+            '현오~ 잘했어!!!',
+            '현오~ 멋져요!!!',
+            '현오~ 대단해!!!',
+            '현오~ 최고야!!!',
+            '현오~ 천재!!!',
+            '현오~ 글씨가 예뻐요!!!',
+            '현오~ 정말 잘 썼어요!!!',
+            '현오~ 짱이다!!!',
+            '현오~ 너무 잘해요!!!',
+            '현오~ 완벽해요!!!',
+            '현오~ 글씨 왕!!!',
+        ];
+
+        function showEncourage() {
+            const el = document.getElementById('encourage');
+            el.textContent = ENCOURAGE_MSGS[Math.floor(Math.random()*ENCOURAGE_MSGS.length)];
+            el.className = 'encourage'; void el.offsetHeight; el.className = 'encourage pop';
+            const r = el.getBoundingClientRect();
+            const cx = r.left + r.width/2, cy = r.top + r.height/2;
+            spawnHeartExplosion(cx, cy, 25);
+            spawnConfetti(cx, cy);
+        }
+
+        // ============ Word Database ============
+        const WORDS = {
+            '동물 🐾': [
+                '강아지','고양이','토끼','곰','사자','호랑이','코끼리','기린','원숭이','펭귄',
+                '다람쥐','돌고래','나비','개구리','거북이','공룡','병아리','오리','닭','소',
+                '말','돼지','양','염소','사슴','여우','늑대','참새','앵무새','햄스터',
+                '고래','상어','문어','오징어','게','새우','조개','해마','잠자리','매미',
+                '메뚜기','달팽이','두더지','수달','판다','코알라','캥거루','하마','악어','독수리',
+                '부엉이','까치','비둘기','제비','갈매기','물개','바다표범','낙타','얼룩말','치타',
+                '표범','물소','코뿔소','두루미','황새','올빼미','타조','공작새','플라밍고','돌고래',
+                '범고래','해파리','불가사리','가재','랍스터','조랑말','망아지','송아지','강아지','새끼양',
+                '미어캣','카멜레온','이구아나','도마뱀','뱀','지렁이','무당벌레','꿀벌','개미','거미',
+                '사마귀','반딧불이','귀뚜라미','풍뎅이','딱정벌레','나방','잉어','금붕어','열대어','해마',
+            ],
+            '가족 👨‍👩‍👦': [
+                '엄마','아빠','할머니','할아버지','누나','형','언니','오빠','동생','아기',
+                '삼촌','이모','고모','사촌','가족','우리집','식구','큰아빠','작은엄마','외할머니',
+                '외할아버지','조카','쌍둥이','막내','첫째','둘째','형제','자매','부모님','어른',
+            ],
+            '사랑 💕': [
+                '사랑해','좋아해','고마워','보고싶어','행복해','기뻐','웃자','힘내','화이팅','최고야',
+                '멋져','예쁘다','잘했어','칭찬해','대단해','자랑해','응원해','축하해','감사해','미안해',
+                '괜찮아','할수있어','파이팅','짱이야','훌륭해','용감해','착해','똑똑해','씩씩해','기특해',
+                '든든해','뿌듯해','설레','신나','즐거워','재밌어','포근해','따뜻해','행복해','평화',
+                '희망','꿈','소원','약속','비밀','우정','사이좋게','다정해','상냥해','친절해',
+            ],
+            '친구 🧒': [
+                '친구','단짝','베프','짝꿍','이웃','동네','유치원','어린이집','선생님','원장님',
+                '반장','놀이터','소풍','생일','파티','선물','편지','인사','안녕','잘가',
+                '또만나','같이놀자','재밌다','신난다','두근두근','설레','기대','깜짝','비밀','약속',
+            ],
+            '음식 🍚': [
+                '밥','김치','떡볶이','사과','바나나','딸기','수박','포도','감','배',
+                '귤','복숭아','우유','빵','과자','아이스크림','치킨','피자','라면','김밥',
+                '떡','만두','국','찌개','볶음밥','비빔밥','잡채','불고기','갈비','삼겹살',
+                '햄버거','핫도그','샌드위치','케이크','쿠키','초콜릿','사탕','젤리','팝콘','도넛',
+                '요구르트','치즈','햄','소시지','계란','두부','감자','고구마','당근','오이',
+                '토마토','브로콜리','시금치','양배추','옥수수','콩','버섯','양파','마늘','호박',
+                '메론','망고','파인애플','키위','체리','블루베리','자두','살구','레몬','라임',
+                '주스','물','차','우유','두유','코코아','스무디','밀크셰이크','요거트','푸딩',
+            ],
+            '자연 🌈': [
+                '하늘','구름','비','눈','바람','해','달','별','꽃','나무',
+                '풀','산','바다','강','호수','무지개','번개','천둥','안개','이슬',
+                '서리','폭포','동굴','사막','숲','들판','초원','계곡','섬','해변',
+                '모래','파도','조개','돌','흙','연못','시냇물','개울','샘물','아침',
+                '낮','저녁','밤','새벽','일출','일몰','노을','봄','여름','가을',
+                '겨울','태풍','소나기','눈보라','햇살','달빛','별빛','은하수','우주','지구',
+            ],
+            '탈것 🚗': [
+                '자동차','버스','기차','비행기','배','자전거','오토바이','트럭','택시','소방차',
+                '경찰차','구급차','헬리콥터','로켓','잠수함','요트','카누','썰매','스케이트','킥보드',
+                '유모차','스쿠터','트램','지하철','케이블카','열기구','행글라이더','드론','보트','뗏목',
+            ],
+            '색깔 🎨': [
+                '빨강','주황','노랑','초록','파랑','보라','분홍','하양','검정','갈색',
+                '하늘색','연두','금색','은색','무지개색','살구색','남색','청록','자주','회색',
+            ],
+            '몸 🖐️': [
+                '머리','눈','코','입','귀','손','발','팔','다리','배',
+                '등','어깨','무릎','손가락','발가락','이마','볼','턱','목','가슴',
+                '허리','엉덩이','팔꿈치','손목','발목','손톱','발톱','눈썹','속눈썹','혀',
+            ],
+            '장소 🏠': [
+                '집','학교','공원','마트','병원','놀이터','도서관','유치원','동물원','수족관',
+                '박물관','미술관','영화관','놀이공원','수영장','운동장','체육관','교실','화장실','부엌',
+                '거실','침실','베란다','옥상','지하실','다락방','정원','뒷마당','앞마당','골목',
+                '시장','백화점','편의점','빵집','꽃집','서점','약국','소방서','경찰서','우체국',
+            ],
+            '물건 📦': [
+                '공','인형','로봇','블록','책','연필','크레파스','가위','풀','종이',
+                '컵','접시','숟가락','젓가락','모자','신발','양말','옷','가방','우산',
+                '시계','거울','빗','치약','칫솔','수건','비누','열쇠','지갑','안경',
+                '카메라','전화기','텔레비전','냉장고','세탁기','에어컨','선풍기','전등','촛불','성냥',
+                '풍선','스티커','딱지','구슬','퍼즐','색종이','도화지','물감','붓','점토',
+            ],
+            '날씨 ☀️': [
+                '맑음','흐림','비','눈','바람','태풍','소나기','안개','우박','서리',
+                '이슬','무더위','한파','미세먼지','황사','가뭄','홍수','천둥','번개','싸락눈',
+            ],
+            '숫자 🔢': [
+                '하나','둘','셋','넷','다섯','여섯','일곱','여덟','아홉','열',
+                '스물','서른','마흔','쉰','예순','일흔','여든','아흔','백','천',
+            ],
+            '인사 👋': [
+                '안녕','잘자','좋은아침','좋은밤','다녀올게','다녀왔어','잘먹겠습니다','잘먹었습니다',
+                '감사합니다','죄송합니다','실례합니다','반갑습니다','안녕하세요','또만나요','잘가','내일봐',
+            ],
+            '놀이 🎮': [
+                '술래잡기','숨바꼭질','가위바위보','소꿉놀이','블록쌓기','색칠하기','그림그리기','종이접기',
+                '점토놀이','물놀이','모래놀이','비눗방울','공놀이','줄넘기','미끄럼틀','그네','시소',
+                '철봉','징검다리','트램펄린','자전거','킥보드','인라인','보드게임','카드게임','퍼즐',
+                '레고','로봇만들기','요리놀이','의사놀이',
+            ],
+            '직업 👩‍⚕️': [
+                '의사','간호사','소방관','경찰관','선생님','요리사','과학자','우주비행사','파일럿',
+                '화가','가수','배우','운동선수','수의사','농부','어부','목수','건축가','디자이너',
+            ],
+        };
+
+        // Flatten for random access
+        let allWords = [];
+        let allCategories = [];
+        Object.keys(WORDS).forEach(cat => {
+            WORDS[cat].forEach(w => {
+                allWords.push(w);
+                allCategories.push(cat);
+            });
+        });
+
+        // ============ Canvas Setup ============
+        const traceCanvas = document.getElementById('trace-canvas');
+        const drawCanvas = document.getElementById('draw-canvas');
+        const traceCtx = traceCanvas.getContext('2d');
+        const drawCtx = drawCanvas.getContext('2d');
+        let cw, ch;
+        let currentWord = '';
+        let currentCat = '';
+        let penColor = '#e8783a';
+        let drawing = false;
+        let lastX, lastY;
+        let tracePixels = null;
+        let hitCount = 0;
+        let totalTracePixels = 0;
+        let completed = false;
+        let soundCounter = 0;
+
+        const PEN_COLORS = ['#e8783a','#e74c3c','#3498db','#2ecc71','#9b59b6','#333333'];
+
+        function initCanvases() {
+            cw = Math.min(380, window.innerWidth - 16);
+            ch = Math.min(320, window.innerHeight - 340);
+            ch = Math.max(ch, 180);
+
+            [traceCanvas, drawCanvas].forEach(c => {
+                c.width = cw; c.height = ch;
+                c.style.width = cw + 'px'; c.style.height = ch + 'px';
+            });
+
+            const wrap = document.getElementById('canvas-wrap');
+            wrap.style.width = cw + 'px';
+            wrap.style.height = ch + 'px';
+        }
+
+        function initPenColors() {
+            const bar = document.getElementById('pen-colors');
+            bar.innerHTML = '';
+            PEN_COLORS.forEach((c, i) => {
+                const dot = document.createElement('div');
+                dot.className = 'pen-dot' + (i === 0 ? ' active' : '');
+                dot.style.background = c;
+                dot.onclick = () => {
+                    document.querySelectorAll('.pen-dot').forEach(d => d.classList.remove('active'));
+                    dot.classList.add('active');
+                    penColor = c;
+                };
+                bar.appendChild(dot);
+            });
+        }
+
+        // ============ Draw Dotted Word ============
+        function drawDottedWord(word) {
+            traceCtx.clearRect(0, 0, cw, ch);
+
+            // Calculate font size to fit
+            let fontSize = Math.min(120, Math.floor((cw - 40) / word.length * 1.1));
+            fontSize = Math.min(fontSize, ch - 40);
+
+            traceCtx.save();
+            traceCtx.font = `bold ${fontSize}px 'Nanum Pen Script', cursive`;
+            traceCtx.textAlign = 'center';
+            traceCtx.textBaseline = 'middle';
+
+            // Draw dashed outline
+            traceCtx.setLineDash([6, 6]);
+            traceCtx.lineWidth = 2.5;
+            traceCtx.strokeStyle = '#ccbbaa';
+            traceCtx.strokeText(word, cw / 2, ch / 2);
+
+            // Draw very light fill as guide
+            traceCtx.setLineDash([]);
+            traceCtx.fillStyle = 'rgba(200, 185, 170, 0.15)';
+            traceCtx.fillText(word, cw / 2, ch / 2);
+
+            traceCtx.restore();
+
+            // Create trace pixel map for hit detection
+            const imageData = traceCtx.getImageData(0, 0, cw, ch);
+            tracePixels = new Uint8Array(cw * ch);
+            totalTracePixels = 0;
+            for (let i = 0; i < cw * ch; i++) {
+                const a = imageData.data[i * 4 + 3];
+                if (a > 20) {
+                    tracePixels[i] = 1;
+                    totalTracePixels++;
+                }
+            }
+            hitCount = 0;
+        }
+
+        // ============ Drawing ============
+        function getPos(e) {
+            const rect = drawCanvas.getBoundingClientRect();
+            const t = e.touches ? e.touches[0] : e;
+            return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+        }
+
+        function startDraw(e) {
+            e.preventDefault();
+            if (completed) return;
+            drawing = true;
+            const p = getPos(e);
+            lastX = p.x; lastY = p.y;
+            checkHit(p.x, p.y);
+        }
+
+        function doDraw(e) {
+            e.preventDefault();
+            if (!drawing || completed) return;
+            const p = getPos(e);
+
+            drawCtx.beginPath();
+            drawCtx.moveTo(lastX, lastY);
+            drawCtx.lineTo(p.x, p.y);
+            drawCtx.strokeStyle = penColor;
+            drawCtx.lineWidth = 5;
+            drawCtx.lineCap = 'round';
+            drawCtx.lineJoin = 'round';
+            drawCtx.stroke();
+
+            // Check hits along the line
+            const dx = p.x - lastX, dy = p.y - lastY;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            const steps = Math.max(1, Math.floor(dist / 3));
+            for (let i = 0; i <= steps; i++) {
+                const t = i / steps;
+                checkHit(lastX + dx * t, lastY + dy * t);
+            }
+
+            soundCounter++;
+            if (soundCounter % 8 === 0) playWriteSound();
+
+            lastX = p.x; lastY = p.y;
+        }
+
+        function endDraw(e) {
+            e.preventDefault();
+            drawing = false;
+        }
+
+        function checkHit(x, y) {
+            const radius = 8;
+            const ix = Math.round(x), iy = Math.round(y);
+            for (let dy = -radius; dy <= radius; dy++) {
+                for (let dx = -radius; dx <= radius; dx++) {
+                    const px = ix + dx, py = iy + dy;
+                    if (px < 0 || px >= cw || py < 0 || py >= ch) continue;
+                    const idx = py * cw + px;
+                    if (tracePixels[idx] === 1) {
+                        tracePixels[idx] = 2; // marked as hit
+                        hitCount++;
+                    }
+                }
+            }
+            updateProgress();
+        }
+
+        function updateProgress() {
+            if (totalTracePixels === 0) return;
+            const pct = Math.min(100, (hitCount / totalTracePixels) * 100 * 1.8); // 1.8x multiplier for easier completion
+            document.getElementById('progress-fill').style.width = pct + '%';
+
+            if (pct >= 85 && !completed) {
+                completed = true;
+                totalWords++;
+                document.getElementById('progress-fill').style.width = '100%';
+                playSuccessSound();
+                checkSticker();
+                setTimeout(() => showEncourage(), 200);
+            }
+        }
+
+        function clearDrawing() {
+            drawCtx.clearRect(0, 0, cw, ch);
+            if (!completed) {
+                // Reset hit tracking
+                for (let i = 0; i < cw * ch; i++) {
+                    if (tracePixels[i] === 2) tracePixels[i] = 1;
+                }
+                hitCount = 0;
+                updateProgress();
+            }
+        }
+
+        function nextWord() {
+            completed = false;
+            document.getElementById('progress-fill').style.width = '0%';
+            document.getElementById('encourage').textContent = '';
+            drawCtx.clearRect(0, 0, cw, ch);
+
+            const idx = Math.floor(Math.random() * allWords.length);
+            currentWord = allWords[idx];
+            currentCat = allCategories[idx];
+
+            document.getElementById('category').textContent = currentCat;
+            document.getElementById('word-label').textContent = currentWord;
+
+            drawDottedWord(currentWord);
+        }
+
+        // Event listeners
+        drawCanvas.addEventListener('mousedown', startDraw);
+        drawCanvas.addEventListener('mousemove', doDraw);
+        drawCanvas.addEventListener('mouseup', endDraw);
+        drawCanvas.addEventListener('mouseleave', endDraw);
+        drawCanvas.addEventListener('touchstart', startDraw, { passive: false });
+        drawCanvas.addEventListener('touchmove', doDraw, { passive: false });
+        drawCanvas.addEventListener('touchend', endDraw, { passive: false });
+
+        document.body.addEventListener('touchmove', (e) => {
+            if (e.target === drawCanvas) e.preventDefault();
+        }, { passive: false });
+
+        // Init
+        initCanvases();
+        initPenColors();
+        nextWord();
+    </script>
+</body>
+</html>

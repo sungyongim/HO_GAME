@@ -12,6 +12,7 @@
     { "source": "/dot-connect", "destination": "/dot-connect.html" },
     { "source": "/balloon-pop", "destination": "/balloon-pop.html" },
     { "source": "/spot-same", "destination": "/spot-same.html" },
+    { "source": "/hangul-trace", "destination": "/hangul-trace.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
