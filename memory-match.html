@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>HO_GAME - 짝맞추기</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Nanum Pen Script', cursive;
+            background: linear-gradient(135deg, #fff8f0 0%, #f0f8ff 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        h1 {
+            font-size: 48px;
+            color: #b19cd9;
+            text-shadow: 3px 3px 0 #ffe66d;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 22px;
+            color: #888;
+            margin-bottom: 16px;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: white;
+            border: 3px solid #ddd;
+            border-radius: 12px;
+            padding: 10px 20px;
+            font-family: 'Nanum Pen Script', cursive;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 50;
+            text-decoration: none;
+            color: black;
+        }
+
+        .back-btn:hover { background: #f0f0f0; border-color: #ccc; }
+
+        .score-display {
+            font-size: 32px;
+            color: #b19cd9;
+            margin: 8px 0;
+        }
+
+        .sticker-bar {
+            display: flex;
+            gap: 6px;
+            padding: 8px 16px;
+            background: white;
+            border-radius: 50px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            border: 2px solid #e0d4f5;
+            margin: 8px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+            min-height: 40px;
+            align-items: center;
+        }
+
+        .sticker {
+            font-size: 24px;
+            animation: stickerPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes stickerPop {
+            0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+            70% { transform: scale(1.3) rotate(10deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .sticker-label {
+            font-size: 18px;
+            color: #ccc;
+        }
+
+        .encourage {
+            font-size: 36px;
+            color: #b19cd9;
+            min-height: 45px;
+            text-align: center;
+            margin: 8px 0;
+        }
+
+        .encourage.pop {
+            animation: encouragePop 2s ease-out forwards;
+        }
+
+        @keyframes encouragePop {
+            0% { opacity: 0; transform: scale(0.3); }
+            15% { opacity: 1; transform: scale(1.3); }
+            30% { transform: scale(1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; transform: scale(1) translateY(-10px); }
+        }
+
+        /* Difficulty buttons */
+        .diff-container {
+            display: flex;
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .diff-btn {
+            padding: 12px 28px;
+            border: 3px solid #b19cd9;
+            border-radius: 16px;
+            background: white;
+            font-family: 'Nanum Pen Script', cursive;
+            font-size: 24px;
+            color: #b19cd9;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .diff-btn:hover, .diff-btn.active {
+            background: #b19cd9;
+            color: white;
+        }
+
+        /* Card Board */
+        .board {
+            display: grid;
+            gap: 8px;
+            padding: 12px;
+            background: #f5f0ff;
+            border-radius: 16px;
+            border: 4px solid #d4c4ef;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            margin: 12px 0;
+        }
+
+        .board-easy {
+            grid-template-columns: repeat(4, 80px);
+            grid-template-rows: repeat(3, 100px);
+        }
+
+        .board-normal {
+            grid-template-columns: repeat(4, 80px);
+            grid-template-rows: repeat(4, 100px);
+        }
+
+        /* Card */
+        .card {
+            width: 80px;
+            height: 100px;
+            perspective: 600px;
+            cursor: pointer;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.5s;
+            transform-style: preserve-3d;
+        }
+
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card.matched .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 42px;
+        }
+
+        .card-back {
+            background: linear-gradient(135deg, #b19cd9 0%, #9b7fc9 100%);
+            border: 3px solid #8b6fb9;
+            color: white;
+            font-size: 30px;
+        }
+
+        .card-front {
+            background: white;
+            border: 3px solid #d4c4ef;
+            transform: rotateY(180deg);
+        }
+
+        .card.matched .card-front {
+            background: #f0ffe0;
+            border-color: #a0d060;
+            animation: matchGlow 0.5s ease-out;
+        }
+
+        @keyframes matchGlow {
+            0% { transform: rotateY(180deg) scale(1); }
+            50% { transform: rotateY(180deg) scale(1.15); }
+            100% { transform: rotateY(180deg) scale(1); }
+        }
+
+        /* Preview overlay */
+        .preview-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 80;
+        }
+
+        .preview-text {
+            font-size: 48px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            animation: countDown 1s ease-in-out infinite;
+        }
+
+        @keyframes countDown {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        /* Game Over Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal.show { display: flex; }
+
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 340px;
+        }
+
+        .modal-content h2 {
+            font-size: 42px;
+            color: #b19cd9;
+            margin-bottom: 10px;
+        }
+
+        .modal-content p {
+            font-size: 28px;
+            color: #666;
+            margin: 8px 0;
+        }
+
+        .modal-stickers {
+            font-size: 28px;
+            margin: 12px 0;
+        }
+
+        .modal-btn {
+            padding: 14px 36px;
+            border: none;
+            border-radius: 16px;
+            font-family: 'Nanum Pen Script', cursive;
+            font-size: 26px;
+            color: white;
+            cursor: pointer;
+            margin: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-restart {
+            background: linear-gradient(135deg, #b19cd9 0%, #9b7fc9 100%);
+        }
+
+        .btn-home {
+            background: linear-gradient(135deg, #87ceeb 0%, #6bb3d9 100%);
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+
+        /* Heart Particle */
+        .heart-particle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 200;
+            font-size: 20px;
+            animation: heartBurst var(--duration, 1s) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        @keyframes heartBurst {
+            0% { opacity: 1; transform: translate(0, 0) scale(0.3) rotate(0deg); }
+            20% { opacity: 1; transform: translate(var(--tx20), var(--ty20)) scale(1.2) rotate(var(--rot)); }
+            60% { opacity: 1; transform: translate(var(--tx60), var(--ty60)) scale(1) rotate(var(--rot2)); }
+            100% { opacity: 0; transform: translate(var(--tx100), var(--ty100)) scale(0.5) rotate(var(--rot3)); }
+        }
+
+        /* Help Button & Tooltip */
+        .title-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .help-btn {
+            border-radius: 12px;
+            border: 3px solid #b19cd9;
+            background: white;
+            color: #b19cd9;
+            font-family: 'Nanum Pen Script', cursive;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 4px 12px;
+            flex-shrink: 0;
+        }
+
+        .help-btn:hover {
+            background: #b19cd9;
+            color: white;
+        }
+
+        .help-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 150;
+        }
+
+        .help-overlay.show { display: flex; }
+
+        .help-box {
+            background: white;
+            border-radius: 20px;
+            padding: 28px 24px;
+            max-width: 320px;
+            width: 90%;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+            text-align: left;
+            position: relative;
+        }
+
+        .help-box h3 {
+            font-size: 28px;
+            color: #b19cd9;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .help-box p {
+            font-size: 22px;
+            color: #555;
+            line-height: 1.5;
+            margin: 6px 0;
+        }
+
+        .help-close {
+            display: block;
+            margin: 16px auto 0;
+            padding: 10px 32px;
+            border: none;
+            border-radius: 12px;
+            background: #b19cd9;
+            color: white;
+            font-family: 'Nanum Pen Script', cursive;
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        /* Mobile */
+        @media (max-width: 600px) {
+            body { padding: 4px; }
+            h1 { font-size: 28px; margin-bottom: 2px; }
+            .subtitle { font-size: 14px; margin-bottom: 4px; }
+            .back-btn { padding: 6px 12px; font-size: 14px; top: 6px; left: 6px; }
+            .score-display { font-size: 22px; margin: 2px 0; }
+            .encourage { font-size: 24px; min-height: 28px; margin: 4px 0; }
+            .help-btn { font-size: 16px; padding: 2px 10px; }
+            .sticker-bar { padding: 4px 10px; min-height: 32px; margin: 3px 0; }
+            .sticker { font-size: 18px; }
+            .sticker-label { font-size: 14px; }
+
+            .board { gap: 6px; padding: 8px; }
+
+            .board-easy {
+                grid-template-columns: repeat(4, 70px);
+                grid-template-rows: repeat(3, 88px);
+            }
+
+            .board-normal {
+                grid-template-columns: repeat(4, 70px);
+                grid-template-rows: repeat(4, 88px);
+            }
+
+            .card { width: 70px; height: 88px; }
+            .card-front, .card-back { font-size: 36px; }
+            .card-back { font-size: 26px; }
+
+            .diff-btn { padding: 8px 18px; font-size: 18px; }
+            .modal-content { padding: 28px; max-width: 300px; }
+            .modal-content h2 { font-size: 36px; }
+            .modal-content p { font-size: 24px; }
+        }
+
+        @media (max-width: 380px) {
+            .board-easy {
+                grid-template-columns: repeat(4, 62px);
+                grid-template-rows: repeat(3, 78px);
+            }
+            .board-normal {
+                grid-template-columns: repeat(4, 62px);
+                grid-template-rows: repeat(4, 78px);
+            }
+            .card { width: 62px; height: 78px; }
+            .card-front, .card-back { font-size: 30px; }
+        }
+    </style>
+</head>
+<body>
+    <a class="back-btn" href="index.html">← 뒤로</a>
+
+    <div class="title-row">
+        <h1>🃏 짝맞추기</h1>
+        <button class="help-btn" onclick="document.getElementById('help-overlay').classList.add('show')">사용법</button>
+    </div>
+    <p class="subtitle">같은 그림을 찾아보세요!</p>
+
+    <!-- Help Overlay -->
+    <div class="help-overlay" id="help-overlay" onclick="if(event.target===this)this.classList.remove('show')">
+        <div class="help-box">
+            <h3>🃏 짝맞추기 규칙</h3>
+            <p>1. 처음에 3초간 카드를 보여줘요</p>
+            <p>2. 카드를 터치해서 뒤집어요</p>
+            <p>3. 같은 그림 2장을 찾으면 성공!</p>
+            <p>4. 모든 쌍을 찾으면 게임 클리어!</p>
+            <p>💡 2쌍 연속 맞추면 하트폭죽!</p>
+            <button class="help-close" onclick="document.getElementById('help-overlay').classList.remove('show')">알겠어요!</button>
+        </div>
+    </div>
+
+    <div class="score-display">맞춘 쌍: <span id="score">0</span> / <span id="total-pairs">6</span></div>
+
+    <div class="sticker-bar" id="sticker-bar">
+        <span class="sticker-label" id="sticker-label">스티커를 모아봐요!</span>
+    </div>
+
+    <div class="encourage" id="encourage"></div>
+
+    <div class="diff-container" id="diff-container">
+        <button class="diff-btn active" onclick="setDifficulty('easy')">쉬움 (3x4)</button>
+        <button class="diff-btn" onclick="setDifficulty('normal')">보통 (4x4)</button>
+    </div>
+
+    <div class="board board-easy" id="board"></div>
+
+    <!-- Preview Overlay -->
+    <div class="preview-overlay" id="preview-overlay" style="display:none;">
+        <div class="preview-text" id="preview-text">3</div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div class="modal" id="game-over-modal">
+        <div class="modal-content">
+            <h2>🎉 완성!</h2>
+            <p id="modal-score"></p>
+            <p id="modal-moves"></p>
+            <div class="modal-stickers" id="modal-stickers"></div>
+            <button class="modal-btn btn-restart" onclick="restartGame()">다시하기</button>
+            <button class="modal-btn btn-home" onclick="window.location.href='index.html'">홈으로</button>
+        </div>
+    </div>
+
+    <script>
+        // ============ Sound System ============
+        let audioCtx = null;
+        function getAudioCtx() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            return audioCtx;
+        }
+        function playTone(freq, duration, type, vol) {
+            try {
+                const ctx = getAudioCtx();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = type || 'sine';
+                osc.frequency.value = freq;
+                gain.gain.value = vol || 0.15;
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.start(ctx.currentTime); osc.stop(ctx.currentTime + duration);
+            } catch(e) {}
+        }
+        function playMatchSound() {
+            playTone(523, 0.12, 'sine', 0.15);
+            setTimeout(() => playTone(659, 0.12, 'sine', 0.15), 80);
+            setTimeout(() => playTone(784, 0.15, 'sine', 0.15), 160);
+        }
+        function playComboSound() {
+            playTone(784, 0.1, 'sine', 0.18);
+            setTimeout(() => playTone(988, 0.1, 'sine', 0.18), 70);
+            setTimeout(() => playTone(1175, 0.15, 'sine', 0.18), 140);
+            setTimeout(() => playTone(1318, 0.2, 'triangle', 0.12), 210);
+        }
+        function playStickerSound() {
+            playTone(880, 0.08, 'sine', 0.12);
+            setTimeout(() => playTone(1108, 0.08, 'sine', 0.12), 60);
+            setTimeout(() => playTone(1318, 0.15, 'triangle', 0.1), 120);
+        }
+        function playFlipSound() {
+            playTone(440, 0.06, 'sine', 0.1);
+            setTimeout(() => playTone(554, 0.06, 'sine', 0.1), 40);
+        }
+        function playFailSound() {
+            playTone(330, 0.15, 'square', 0.06);
+            setTimeout(() => playTone(277, 0.2, 'square', 0.06), 120);
+        }
+
+        // ============ Heart Explosion ============
+        function spawnHeartExplosion(x, y, count) {
+            const hearts = ['❤️', '💕', '💗', '💖', '💓'];
+            for (let i = 0; i < (count || 18); i++) {
+                const heart = document.createElement('div');
+                heart.className = 'heart-particle';
+                heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+                const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.6;
+                const dist = 60 + Math.random() * 100;
+                const tx100 = Math.cos(angle) * dist;
+                const ty100 = Math.sin(angle) * dist + 30;
+                const tx60 = Math.cos(angle) * dist * 0.7;
+                const ty60 = Math.sin(angle) * dist * 0.7 - 10;
+                const tx20 = Math.cos(angle) * dist * 0.3;
+                const ty20 = Math.sin(angle) * dist * 0.3 - 20;
+                const rot = (Math.random() - 0.5) * 60;
+                const duration = 0.7 + Math.random() * 0.6;
+                const size = 14 + Math.random() * 14;
+                heart.style.cssText = `left:${x}px;top:${y}px;font-size:${size}px;--tx20:${tx20}px;--ty20:${ty20}px;--tx60:${tx60}px;--ty60:${ty60}px;--tx100:${tx100}px;--ty100:${ty100}px;--rot:${rot}deg;--rot2:${rot*1.5}deg;--rot3:${rot*2}deg;--duration:${duration}s;`;
+                document.body.appendChild(heart);
+                setTimeout(() => heart.remove(), duration * 1000 + 50);
+            }
+        }
+
+        // ============ Sticker System ============
+        const STICKER_MILESTONES = [1, 3, 5, 7, 9, 12];
+        const STICKER_ICONS = ['⭐', '🌟', '🏅', '🎖️', '🏆', '👑'];
+        let earnedStickers = [];
+        let lastStickerIndex = -1;
+
+        function checkStickerMilestone(pairs) {
+            for (let i = lastStickerIndex + 1; i < STICKER_MILESTONES.length; i++) {
+                if (pairs >= STICKER_MILESTONES[i]) {
+                    lastStickerIndex = i;
+                    earnedStickers.push(STICKER_ICONS[i]);
+                    addStickerToBar(STICKER_ICONS[i]);
+                    playStickerSound();
+                    const bar = document.getElementById('sticker-bar');
+                    const rect = bar.getBoundingClientRect();
+                    spawnHeartExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2, 12);
+                } else break;
+            }
+        }
+
+        function addStickerToBar(icon) {
+            const bar = document.getElementById('sticker-bar');
+            const label = document.getElementById('sticker-label');
+            if (label) label.remove();
+            const s = document.createElement('span');
+            s.className = 'sticker';
+            s.textContent = icon;
+            bar.appendChild(s);
+        }
+
+        function resetStickers() {
+            earnedStickers = [];
+            lastStickerIndex = -1;
+            const bar = document.getElementById('sticker-bar');
+            bar.innerHTML = '<span class="sticker-label" id="sticker-label">스티커를 모아봐요!</span>';
+        }
+
+        // ============ Encouragement ============
+        const ENCOURAGE_MSGS = [
+            '현오~ 잘했어요!!!',
+            '현오~ 대단해요!!!',
+            '현오~ 최고예요!!!',
+            '현오~ 멋져요!!!',
+            '현오~ 천재!!!',
+        ];
+
+        function showEncourage() {
+            const el = document.getElementById('encourage');
+            const msg = ENCOURAGE_MSGS[Math.floor(Math.random() * ENCOURAGE_MSGS.length)];
+            el.textContent = msg;
+            el.className = 'encourage';
+            void el.offsetHeight;
+            el.className = 'encourage pop';
+            const rect = el.getBoundingClientRect();
+            spawnHeartExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2, 22);
+        }
+
+        // ============ Game State ============
+        const EMOJIS_EASY = ['🦕', '🦖', '🤖', '🚗', '🦎', '🐊'];
+        const EMOJIS_FULL = ['🦕', '🦖', '🤖', '🚗', '🦎', '🐊', '🥚', '🦴'];
+
+        let difficulty = 'easy';
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let totalPairs = 6;
+        let moves = 0;
+        let locked = false;
+        let consecutiveMatches = 0;
+        let totalMatchedAcrossGames = 0;
+
+        function setDifficulty(diff) {
+            difficulty = diff;
+            document.querySelectorAll('.diff-btn').forEach((b, i) => {
+                b.classList.toggle('active', (i === 0 && diff === 'easy') || (i === 1 && diff === 'normal'));
+            });
+            startGame();
+        }
+
+        function startGame() {
+            const board = document.getElementById('board');
+            matchedPairs = 0;
+            moves = 0;
+            flippedCards = [];
+            locked = true;
+            consecutiveMatches = 0;
+            document.getElementById('encourage').textContent = '';
+
+            if (difficulty === 'easy') {
+                totalPairs = 6;
+                board.className = 'board board-easy';
+                cards = shuffle([...EMOJIS_EASY, ...EMOJIS_EASY]);
+            } else {
+                totalPairs = 8;
+                board.className = 'board board-normal';
+                cards = shuffle([...EMOJIS_FULL, ...EMOJIS_FULL]);
+            }
+
+            document.getElementById('score').textContent = '0';
+            document.getElementById('total-pairs').textContent = totalPairs;
+            resetStickers();
+            renderBoard(true);
+
+            // Preview: show all cards for 3 seconds
+            const overlay = document.getElementById('preview-overlay');
+            const previewText = document.getElementById('preview-text');
+            overlay.style.display = 'flex';
+            let countdown = 3;
+            previewText.textContent = countdown;
+
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    previewText.textContent = countdown;
+                } else {
+                    clearInterval(countdownInterval);
+                    overlay.style.display = 'none';
+                    // Flip all cards back
+                    document.querySelectorAll('.card').forEach(c => c.classList.remove('flipped'));
+                    locked = false;
+                }
+            }, 1000);
+        }
+
+        function renderBoard(showAll) {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            cards.forEach((emoji, i) => {
+                const card = document.createElement('div');
+                card.className = 'card' + (showAll ? ' flipped' : '');
+                card.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-back">?</div>
+                        <div class="card-front">${emoji}</div>
+                    </div>
+                `;
+                card.addEventListener('click', () => flipCard(card, i));
+                card.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    flipCard(card, i);
+                }, { passive: false });
+                board.appendChild(card);
+            });
+        }
+
+        function flipCard(card, index) {
+            if (locked) return;
+            if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+            if (flippedCards.length >= 2) return;
+            if (flippedCards.length === 1 && flippedCards[0].index === index) return;
+
+            card.classList.add('flipped');
+            playFlipSound();
+            flippedCards.push({ card, index, emoji: cards[index] });
+
+            if (flippedCards.length === 2) {
+                moves++;
+                locked = true;
+
+                if (flippedCards[0].emoji === flippedCards[1].emoji) {
+                    // Match!
+                    setTimeout(() => {
+                        flippedCards[0].card.classList.add('matched');
+                        flippedCards[1].card.classList.add('matched');
+                        matchedPairs++;
+                        totalMatchedAcrossGames++;
+                        consecutiveMatches++;
+                        document.getElementById('score').textContent = matchedPairs;
+                        playMatchSound();
+                        checkStickerMilestone(totalMatchedAcrossGames);
+
+                        if (consecutiveMatches >= 2) {
+                            showEncourage();
+                            playComboSound();
+                            consecutiveMatches = 0;
+                        }
+
+                        flippedCards = [];
+                        locked = false;
+
+                        if (matchedPairs === totalPairs) {
+                            setTimeout(() => showGameOver(), 500);
+                        }
+                    }, 400);
+                } else {
+                    // No match
+                    consecutiveMatches = 0;
+                    setTimeout(() => {
+                        playFailSound();
+                        flippedCards[0].card.classList.remove('flipped');
+                        flippedCards[1].card.classList.remove('flipped');
+                        flippedCards = [];
+                        locked = false;
+                    }, 900);
+                }
+            }
+        }
+
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function showGameOver() {
+            const modal = document.getElementById('game-over-modal');
+            document.getElementById('modal-score').textContent = `${totalPairs}쌍 모두 찾았어요!`;
+            document.getElementById('modal-moves').textContent = `시도 횟수: ${moves}번`;
+            document.getElementById('modal-stickers').textContent = earnedStickers.length > 0
+                ? '획득 스티커: ' + earnedStickers.join(' ')
+                : '';
+            modal.classList.add('show');
+
+            spawnHeartExplosion(window.innerWidth / 2, window.innerHeight / 2, 25);
+            playComboSound();
+        }
+
+        function restartGame() {
+            document.getElementById('game-over-modal').classList.remove('show');
+            startGame();
+        }
+
+        // Prevent scroll during game
+        document.body.addEventListener('touchmove', (e) => {
+            if (e.target.closest('.board')) e.preventDefault();
+        }, { passive: false });
+
+        // Start
+        startGame();
+    </script>
+</body>
+</html>

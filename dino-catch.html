@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>HO_GAME - 공룡 잡기</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Nanum Pen Script', cursive;
+            background: linear-gradient(135deg, #fff8f0 0%, #f0f8ff 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        h1 {
+            font-size: 48px;
+            color: #5ec75e;
+            text-shadow: 3px 3px 0 #ffe66d;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 22px;
+            color: #888;
+            margin-bottom: 16px;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: white;
+            border: 3px solid #ddd;
+            border-radius: 12px;
+            padding: 10px 20px;
+            font-family: 'Nanum Pen Script', cursive;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 50;
+            text-decoration: none;
+            color: black;
+        }
+
+        .back-btn:hover { background: #f0f0f0; border-color: #ccc; }
+
+        .top-bar {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            margin: 8px 0;
+        }
+
+        .score-display {
+            font-size: 32px;
+            color: #5ec75e;
+        }
+
+        .timer-display {
+            font-size: 32px;
+            color: #ff6b9d;
+        }
+
+        .timer-bar {
+            width: 100%;
+            max-width: 340px;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+
+        .timer-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #7ed321, #50c878);
+            transition: width 0.3s;
+            border-radius: 10px;
+        }
+
+        .timer-fill.warning {
+            background: linear-gradient(90deg, #ff6b6b, #ff4757);
+        }
+
+        .sticker-bar {
+            display: flex;
+            gap: 6px;
+            padding: 8px 16px;
+            background: white;
+            border-radius: 50px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            border: 2px solid #d4efd4;
+            margin: 8px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+            min-height: 40px;
+            align-items: center;
+        }
+
+        .sticker {
+            font-size: 24px;
+            animation: stickerPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes stickerPop {
+            0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+            70% { transform: scale(1.3) rotate(10deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .sticker-label { font-size: 18px; color: #ccc; }
+
+        .encourage {
+            font-size: 36px;
+            color: #5ec75e;
+            min-height: 45px;
+            text-align: center;
+            margin: 8px 0;
+        }
+
+        .encourage.pop {
+            animation: encouragePop 2s ease-out forwards;
+        }
+
+        @keyframes encouragePop {
+            0% { opacity: 0; transform: scale(0.3); }
+            15% { opacity: 1; transform: scale(1.3); }
+            30% { transform: scale(1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; transform: scale(1) translateY(-10px); }
+        }
+
+        /* Board */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 10px;
+            padding: 14px;
+            background: #f0fff0;
+            border-radius: 16px;
+            border: 4px solid #a8d8a8;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            margin: 12px 0;
+        }
+
+        .hole {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: radial-gradient(ellipse at center, #8B4513 0%, #654321 70%, #3d2914 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: box-shadow 0.15s;
+            border: 3px solid #5a3010;
+        }
+
+        .hole:active {
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.4);
+        }
+
+        .hole .creature {
+            position: absolute;
+            bottom: -60px;
+            transition: bottom 0.15s ease-out;
+            font-size: 48px;
+            line-height: 1;
+        }
+
+        .hole .creature.show {
+            bottom: 10px;
+        }
+
+        .hole .creature.caught {
+            animation: catchPop 0.3s ease-out forwards;
+        }
+
+        @keyframes catchPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4) rotate(15deg); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .hole .creature.cactus-hit {
+            animation: cactusShake 0.4s ease-out;
+        }
+
+        @keyframes cactusShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        /* Start Button */
+        .start-btn {
+            padding: 16px 48px;
+            border: none;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #77dd77 0%, #5ec75e 100%);
+            font-family: 'Nanum Pen Script', cursive;
+            font-size: 32px;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            transition: all 0.2s;
+            margin: 16px 0;
+            border: 4px solid #4eb74e;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+        }
+
+        /* Game Over Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal.show { display: flex; }
+
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 340px;
+        }
+
+        .modal-content h2 {
+            font-size: 42px;
+            color: #5ec75e;
+            margin-bottom: 10px;
+        }
+
+        .modal-content p {
+            font-size: 28px;
+            color: #666;
+            margin: 8px 0;
+        }
+
+        .modal-stickers { font-size: 28px; margin: 12px 0; }
+
+        .modal-btn {
+            padding: 14px 36px;
+            border: none;
+            border-radius: 16px;
+            font-family: 'Nanum Pen Script', cursive;
+            font-size: 26px;
+            color: white;
+            cursor: pointer;
+            margin: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-restart { background: linear-gradient(135deg, #77dd77 0%, #5ec75e 100%); }
+        .btn-home { background: linear-gradient(135deg, #87ceeb 0%, #6bb3d9 100%); }
+
+        .modal-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+
+        /* Heart Particle */
+        .heart-particle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 200;
+            font-size: 20px;
+            animation: heartBurst var(--duration, 1s) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        @keyframes heartBurst {
+            0% { opacity: 1; transform: translate(0, 0) scale(0.3) rotate(0deg); }
+            20% { opacity: 1; transform: translate(var(--tx20), var(--ty20)) scale(1.2) rotate(var(--rot)); }
+            60% { opacity: 1; transform: translate(var(--tx60), var(--ty60)) scale(1) rotate(var(--rot2)); }
+            100% { opacity: 0; transform: translate(var(--tx100), var(--ty100)) scale(0.5) rotate(var(--rot3)); }
+        }
+
+        /* Score Popup */
+        .score-popup {
+            position: absolute;
+            pointer-events: none;
+            font-size: 28px;
+            font-family: 'Nanum Pen Script', cursive;
+            font-weight: bold;
+            animation: scoreFloat 0.8s ease-out forwards;
+            z-index: 60;
+        }
+
+        @keyframes scoreFloat {
+            0% { opacity: 1; transform: translateY(0) scale(0.5); }
+            30% { transform: translateY(-20px) scale(1.2); }
+            100% { opacity: 0; transform: translateY(-50px) scale(1); }
+        }
+
+        /* Help Button & Tooltip */
+        .title-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .help-btn {
+            border-radius: 12px;
+            border: 3px solid #5ec75e;
+            background: white;
+            color: #5ec75e;
+            font-family: 'Nanum Pen Script', cursive;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 4px 12px;
+            flex-shrink: 0;
+        }
+
+        .help-btn:hover {
+            background: #5ec75e;
+            color: white;
+        }
+
+        .help-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 150;
+        }
+
+        .help-overlay.show { display: flex; }
+
+        .help-box {
+            background: white;
+            border-radius: 20px;
+            padding: 28px 24px;
+            max-width: 320px;
+            width: 90%;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+            text-align: left;
+            position: relative;
+        }
+
+        .help-box h3 {
+            font-size: 28px;
+            color: #5ec75e;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .help-box p {
+            font-size: 22px;
+            color: #555;
+            line-height: 1.5;
+            margin: 6px 0;
+        }
+
+        .help-close {
+            display: block;
+            margin: 16px auto 0;
+            padding: 10px 32px;
+            border: none;
+            border-radius: 12px;
+            background: #5ec75e;
+            color: white;
+            font-family: 'Nanum Pen Script', cursive;
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        /* Mobile */
+        @media (max-width: 600px) {
+            body { padding: 4px; }
+            h1 { font-size: 28px; margin-bottom: 2px; }
+            .subtitle { font-size: 14px; margin-bottom: 4px; }
+            .back-btn { padding: 6px 12px; font-size: 14px; top: 6px; left: 6px; }
+            .score-display, .timer-display { font-size: 22px; }
+            .encourage { font-size: 24px; min-height: 28px; margin: 4px 0; }
+            .timer-bar { max-width: 300px; height: 12px; margin-bottom: 4px; }
+            .help-btn { font-size: 16px; padding: 2px 10px; }
+            .sticker-bar { padding: 4px 10px; min-height: 32px; margin: 3px 0; }
+            .sticker { font-size: 18px; }
+            .sticker-label { font-size: 14px; }
+
+            .board {
+                grid-template-columns: repeat(3, 90px);
+                grid-template-rows: repeat(3, 90px);
+                gap: 8px;
+                padding: 10px;
+            }
+
+            .hole { width: 90px; height: 90px; }
+            .hole .creature { font-size: 42px; }
+            .start-btn { font-size: 24px; padding: 10px 32px; margin: 8px 0; }
+            .modal-content { padding: 28px; max-width: 300px; }
+            .modal-content h2 { font-size: 36px; }
+            .modal-content p { font-size: 24px; }
+        }
+
+        @media (max-width: 380px) {
+            .board {
+                grid-template-columns: repeat(3, 80px);
+                grid-template-rows: repeat(3, 80px);
+                gap: 6px;
+            }
+            .hole { width: 80px; height: 80px; }
+            .hole .creature { font-size: 36px; }
+        }
+    </style>
+</head>
+<body>
+    <a class="back-btn" href="index.html">← 뒤로</a>
+
+    <div class="title-row">
+        <h1>🦕 공룡 잡기</h1>
+        <button class="help-btn" onclick="document.getElementById('help-overlay').classList.add('show')">사용법</button>
+    </div>
+    <p class="subtitle">튀어나오는 공룡을 잡아요!</p>
+
+    <!-- Help Overlay -->
+    <div class="help-overlay" id="help-overlay" onclick="if(event.target===this)this.classList.remove('show')">
+        <div class="help-box">
+            <h3>🦕 공룡 잡기 규칙</h3>
+            <p>1. 30초 안에 공룡을 잡아요!</p>
+            <p>2. 🦕🦖🦎🐊 터치하면 +1점</p>
+            <p>3. 🥚 알을 잡으면 +3점 보너스!</p>
+            <p>4. 🌵 선인장은 터치하면 안 돼요! (-2점)</p>
+            <p>💡 5마리마다 하트폭죽!</p>
+            <button class="help-close" onclick="document.getElementById('help-overlay').classList.remove('show')">알겠어요!</button>
+        </div>
+    </div>
+
+    <div class="top-bar">
+        <div class="score-display">점수: <span id="score">0</span></div>
+        <div class="timer-display">⏱ <span id="timer">30</span>초</div>
+    </div>
+
+    <div class="timer-bar">
+        <div class="timer-fill" id="timer-fill" style="width:100%"></div>
+    </div>
+
+    <div class="sticker-bar" id="sticker-bar">
+        <span class="sticker-label" id="sticker-label">스티커를 모아봐요!</span>
+    </div>
+
+    <div class="encourage" id="encourage"></div>
+
+    <div class="board" id="board"></div>
+
+    <button class="start-btn" id="start-btn" onclick="startGame()">🦕 게임 시작!</button>
+
+    <!-- Game Over Modal -->
+    <div class="modal" id="game-over-modal">
+        <div class="modal-content">
+            <h2 id="modal-title">🎉 잘했어요!</h2>
+            <p id="modal-score"></p>
+            <p id="modal-detail"></p>
+            <div class="modal-stickers" id="modal-stickers"></div>
+            <button class="modal-btn btn-restart" onclick="restartGame()">다시하기</button>
+            <button class="modal-btn btn-home" onclick="window.location.href='index.html'">홈으로</button>
+        </div>
+    </div>
+
+    <script>
+        // ============ Sound System ============
+        let audioCtx = null;
+        function getAudioCtx() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            return audioCtx;
+        }
+        function playTone(freq, duration, type, vol) {
+            try {
+                const ctx = getAudioCtx();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = type || 'sine';
+                osc.frequency.value = freq;
+                gain.gain.value = vol || 0.15;
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.start(ctx.currentTime); osc.stop(ctx.currentTime + duration);
+            } catch(e) {}
+        }
+        function playCatchSound() {
+            playTone(523, 0.08, 'sine', 0.15);
+            setTimeout(() => playTone(659, 0.08, 'sine', 0.15), 60);
+            setTimeout(() => playTone(784, 0.1, 'sine', 0.15), 120);
+        }
+        function playBonusSound() {
+            playTone(784, 0.1, 'sine', 0.18);
+            setTimeout(() => playTone(988, 0.1, 'sine', 0.18), 70);
+            setTimeout(() => playTone(1175, 0.15, 'sine', 0.18), 140);
+            setTimeout(() => playTone(1318, 0.2, 'triangle', 0.12), 210);
+        }
+        function playCactusSound() {
+            playTone(200, 0.2, 'square', 0.08);
+            setTimeout(() => playTone(150, 0.3, 'square', 0.08), 150);
+        }
+        function playStickerSound() {
+            playTone(880, 0.08, 'sine', 0.12);
+            setTimeout(() => playTone(1108, 0.08, 'sine', 0.12), 60);
+            setTimeout(() => playTone(1318, 0.15, 'triangle', 0.1), 120);
+        }
+        function playGameOverSound() {
+            playTone(523, 0.2, 'sine', 0.12);
+            setTimeout(() => playTone(494, 0.2, 'sine', 0.12), 200);
+            setTimeout(() => playTone(440, 0.2, 'sine', 0.12), 400);
+            setTimeout(() => playTone(392, 0.4, 'sine', 0.12), 600);
+        }
+
+        // ============ Heart Explosion ============
+        function spawnHeartExplosion(x, y, count) {
+            const hearts = ['❤️', '💕', '💗', '💖', '💓'];
+            for (let i = 0; i < (count || 18); i++) {
+                const heart = document.createElement('div');
+                heart.className = 'heart-particle';
+                heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+                const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.6;
+                const dist = 60 + Math.random() * 100;
+                const tx100 = Math.cos(angle) * dist;
+                const ty100 = Math.sin(angle) * dist + 30;
+                const tx60 = Math.cos(angle) * dist * 0.7;
+                const ty60 = Math.sin(angle) * dist * 0.7 - 10;
+                const tx20 = Math.cos(angle) * dist * 0.3;
+                const ty20 = Math.sin(angle) * dist * 0.3 - 20;
+                const rot = (Math.random() - 0.5) * 60;
+                const duration = 0.7 + Math.random() * 0.6;
+                const size = 14 + Math.random() * 14;
+                heart.style.cssText = `left:${x}px;top:${y}px;font-size:${size}px;--tx20:${tx20}px;--ty20:${ty20}px;--tx60:${tx60}px;--ty60:${ty60}px;--tx100:${tx100}px;--ty100:${ty100}px;--rot:${rot}deg;--rot2:${rot*1.5}deg;--rot3:${rot*2}deg;--duration:${duration}s;`;
+                document.body.appendChild(heart);
+                setTimeout(() => heart.remove(), duration * 1000 + 50);
+            }
+        }
+
+        // ============ Sticker System ============
+        const STICKER_MILESTONES = [5, 10, 18, 25, 35, 50];
+        const STICKER_ICONS = ['⭐', '🌟', '🏅', '🎖️', '🏆', '👑'];
+        let earnedStickers = [];
+        let lastStickerIndex = -1;
+
+        function checkStickerMilestone(score) {
+            for (let i = lastStickerIndex + 1; i < STICKER_MILESTONES.length; i++) {
+                if (score >= STICKER_MILESTONES[i]) {
+                    lastStickerIndex = i;
+                    earnedStickers.push(STICKER_ICONS[i]);
+                    addStickerToBar(STICKER_ICONS[i]);
+                    playStickerSound();
+                    const bar = document.getElementById('sticker-bar');
+                    const rect = bar.getBoundingClientRect();
+                    spawnHeartExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2, 12);
+                } else break;
+            }
+        }
+
+        function addStickerToBar(icon) {
+            const bar = document.getElementById('sticker-bar');
+            const label = document.getElementById('sticker-label');
+            if (label) label.remove();
+            const s = document.createElement('span');
+            s.className = 'sticker';
+            s.textContent = icon;
+            bar.appendChild(s);
+        }
+
+        function resetStickers() {
+            earnedStickers = [];
+            lastStickerIndex = -1;
+            const bar = document.getElementById('sticker-bar');
+            bar.innerHTML = '<span class="sticker-label" id="sticker-label">스티커를 모아봐요!</span>';
+        }
+
+        // ============ Encouragement ============
+        const ENCOURAGE_MSGS = [
+            '현오~ 잘했어요!!!',
+            '현오~ 대단해요!!!',
+            '현오~ 최고예요!!!',
+            '현오~ 멋져요!!!',
+            '현오~ 빠르다!!!',
+        ];
+
+        const EGG_MSGS = [
+            '🥚 현오~ 알 발견!!!',
+            '🥚 현오~ 보너스!!!',
+            '🥚 와! 특별 알이다!',
+        ];
+
+        function showEncourage(isEgg) {
+            const el = document.getElementById('encourage');
+            const msgs = isEgg ? EGG_MSGS : ENCOURAGE_MSGS;
+            el.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+            el.className = 'encourage';
+            void el.offsetHeight;
+            el.className = 'encourage pop';
+            const rect = el.getBoundingClientRect();
+            spawnHeartExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2, 22);
+        }
+
+        // ============ Game State ============
+        const DINOS = ['🦕', '🦖', '🦎', '🐊'];
+        const BONUS = '🥚';
+        const TRAP = '🌵';
+
+        let score = 0;
+        let caught = 0;
+        let cactusHits = 0;
+        let gameTimer = null;
+        let spawnTimer = null;
+        let timeLeft = 30;
+        let gameRunning = false;
+        let activeHoles = new Map(); // holeIndex -> { type, timeout }
+
+        function initBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                const hole = document.createElement('div');
+                hole.className = 'hole';
+                hole.dataset.index = i;
+                const creature = document.createElement('div');
+                creature.className = 'creature';
+                creature.id = `creature-${i}`;
+                hole.appendChild(creature);
+
+                const handler = (e) => {
+                    e.preventDefault();
+                    tapHole(i);
+                };
+                hole.addEventListener('touchstart', handler, { passive: false });
+                hole.addEventListener('mousedown', handler);
+                board.appendChild(hole);
+            }
+        }
+
+        function startGame() {
+            score = 0;
+            caught = 0;
+            cactusHits = 0;
+            timeLeft = 30;
+            gameRunning = true;
+            activeHoles.clear();
+            resetStickers();
+            document.getElementById('score').textContent = '0';
+            document.getElementById('timer').textContent = '30';
+            document.getElementById('timer-fill').style.width = '100%';
+            document.getElementById('timer-fill').classList.remove('warning');
+            document.getElementById('encourage').textContent = '';
+            document.getElementById('start-btn').style.display = 'none';
+
+            initBoard();
+
+            // Game timer
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                const pct = (timeLeft / 30) * 100;
+                document.getElementById('timer-fill').style.width = pct + '%';
+                if (timeLeft <= 10) {
+                    document.getElementById('timer-fill').classList.add('warning');
+                }
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+
+            // Start spawning
+            scheduleSpawn();
+        }
+
+        function scheduleSpawn() {
+            if (!gameRunning) return;
+            // Speed increases as time passes
+            const elapsed = 30 - timeLeft;
+            const minDelay = Math.max(400, 800 - elapsed * 15);
+            const maxDelay = Math.max(700, 1200 - elapsed * 15);
+            const delay = minDelay + Math.random() * (maxDelay - minDelay);
+
+            spawnTimer = setTimeout(() => {
+                if (!gameRunning) return;
+                spawnCreature();
+                scheduleSpawn();
+            }, delay);
+        }
+
+        function spawnCreature() {
+            // Find empty holes
+            const emptyHoles = [];
+            for (let i = 0; i < 9; i++) {
+                if (!activeHoles.has(i)) emptyHoles.push(i);
+            }
+            if (emptyHoles.length === 0) return;
+
+            const holeIdx = emptyHoles[Math.floor(Math.random() * emptyHoles.length)];
+            const creature = document.getElementById(`creature-${holeIdx}`);
+
+            // Decide what to spawn: 70% dino, 10% egg, 20% cactus
+            const roll = Math.random();
+            let type, emoji;
+            if (roll < 0.10) {
+                type = 'bonus';
+                emoji = BONUS;
+            } else if (roll < 0.30) {
+                type = 'trap';
+                emoji = TRAP;
+            } else {
+                type = 'dino';
+                emoji = DINOS[Math.floor(Math.random() * DINOS.length)];
+            }
+
+            creature.textContent = emoji;
+            creature.className = 'creature show';
+
+            // How long it stays visible (gets shorter over time)
+            const elapsed = 30 - timeLeft;
+            const stayTime = Math.max(800, 1800 - elapsed * 30);
+
+            const timeout = setTimeout(() => {
+                hideCreature(holeIdx);
+            }, stayTime);
+
+            activeHoles.set(holeIdx, { type, timeout });
+        }
+
+        function hideCreature(idx) {
+            const creature = document.getElementById(`creature-${idx}`);
+            if (creature) {
+                creature.className = 'creature';
+            }
+            activeHoles.delete(idx);
+        }
+
+        function tapHole(idx) {
+            if (!gameRunning) return;
+            if (!activeHoles.has(idx)) return;
+
+            const { type, timeout } = activeHoles.get(idx);
+            clearTimeout(timeout);
+
+            const creature = document.getElementById(`creature-${idx}`);
+            const hole = creature.parentElement;
+            const rect = hole.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+
+            if (type === 'trap') {
+                // Cactus! Penalty
+                cactusHits++;
+                score = Math.max(0, score - 2);
+                document.getElementById('score').textContent = score;
+                creature.className = 'creature show cactus-hit';
+                playCactusSound();
+
+                // Show penalty popup
+                showScorePopup(cx, cy, '-2', '#ff4757');
+
+                setTimeout(() => hideCreature(idx), 400);
+            } else {
+                // Dino or Egg caught
+                const points = type === 'bonus' ? 3 : 1;
+                score += points;
+                caught++;
+                document.getElementById('score').textContent = score;
+                creature.className = 'creature show caught';
+                playCatchSound();
+                checkStickerMilestone(score);
+
+                // Show score popup
+                showScorePopup(cx, cy, `+${points}`, type === 'bonus' ? '#ffd700' : '#5ec75e');
+
+                if (type === 'bonus') {
+                    showEncourage(true);
+                    playBonusSound();
+                } else if (caught % 5 === 0) {
+                    showEncourage(false);
+                }
+
+                setTimeout(() => hideCreature(idx), 300);
+            }
+        }
+
+        function showScorePopup(x, y, text, color) {
+            const popup = document.createElement('div');
+            popup.className = 'score-popup';
+            popup.textContent = text;
+            popup.style.left = x + 'px';
+            popup.style.top = y + 'px';
+            popup.style.color = color;
+            document.body.appendChild(popup);
+            setTimeout(() => popup.remove(), 800);
+        }
+
+        function endGame() {
+            gameRunning = false;
+            clearInterval(gameTimer);
+            clearTimeout(spawnTimer);
+
+            // Hide all active creatures
+            for (const [idx] of activeHoles) {
+                hideCreature(idx);
+            }
+
+            setTimeout(() => {
+                const modal = document.getElementById('game-over-modal');
+                document.getElementById('modal-title').textContent = score >= 20 ? '🎉 대단해요!' : '🦕 잘했어요!';
+                document.getElementById('modal-score').textContent = `점수: ${score}점`;
+                document.getElementById('modal-detail').textContent = `잡은 공룡: ${caught}마리`;
+                document.getElementById('modal-stickers').textContent = earnedStickers.length > 0
+                    ? '획득 스티커: ' + earnedStickers.join(' ')
+                    : '';
+                modal.classList.add('show');
+
+                spawnHeartExplosion(window.innerWidth / 2, window.innerHeight / 2, 25);
+                if (score >= 20) playBonusSound();
+                else playGameOverSound();
+            }, 500);
+        }
+
+        function restartGame() {
+            document.getElementById('game-over-modal').classList.remove('show');
+            startGame();
+        }
+
+        // Prevent scroll during game
+        document.body.addEventListener('touchmove', (e) => {
+            if (gameRunning && e.target.closest('.board')) e.preventDefault();
+        }, { passive: false });
+
+        // Init board on load
+        initBoard();
+    </script>
+</body>
+</html>

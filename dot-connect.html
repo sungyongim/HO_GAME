@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>HO_GAME - 숫자 잇기</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Nanum Pen Script', cursive;
+            background: linear-gradient(135deg, #fff8f0 0%, #f0f8ff 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 4px;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .back-btn {
+            position: fixed; top: 6px; left: 6px;
+            background: white; border: 3px solid #ddd; border-radius: 12px;
+            padding: 6px 12px; font-family: 'Nanum Pen Script', cursive;
+            font-size: 16px; cursor: pointer; z-index: 50;
+            text-decoration: none; color: black;
+        }
+        .title-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
+        h1 { font-size: 28px; color: #a8a0e8; text-shadow: 2px 2px 0 #ffe66d; margin-bottom: 2px; }
+        .help-btn {
+            border-radius: 12px; border: 3px solid #a8a0e8; background: white;
+            color: #a8a0e8; font-family: 'Nanum Pen Script', cursive;
+            font-size: 16px; cursor: pointer; padding: 2px 10px;
+        }
+        .help-btn:hover { background: #a8a0e8; color: white; }
+        .help-overlay {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+            justify-content: center; align-items: center; z-index: 150;
+        }
+        .help-overlay.show { display: flex; }
+        .help-box {
+            background: white; border-radius: 20px; padding: 24px;
+            max-width: 320px; width: 90%; box-shadow: 0 16px 48px rgba(0,0,0,0.25); text-align: left;
+        }
+        .help-box h3 { font-size: 26px; color: #a8a0e8; margin-bottom: 10px; text-align: center; }
+        .help-box p { font-size: 20px; color: #555; line-height: 1.5; margin: 5px 0; }
+        .help-close {
+            display: block; margin: 14px auto 0; padding: 8px 28px; border: none;
+            border-radius: 12px; background: #a8a0e8; color: white;
+            font-family: 'Nanum Pen Script', cursive; font-size: 20px; cursor: pointer;
+        }
+
+        .status { font-size: 22px; color: #888; margin: 4px 0; min-height: 28px; text-align: center; }
+        .encourage {
+            font-size: 28px; color: #a8a0e8; min-height: 32px;
+            text-align: center; margin: 4px 0;
+        }
+        .encourage.pop { animation: encouragePop 2s ease-out forwards; }
+        @keyframes encouragePop {
+            0% { opacity: 0; transform: scale(0.3); }
+            15% { opacity: 1; transform: scale(1.3); }
+            30% { transform: scale(1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; transform: scale(1) translateY(-10px); }
+        }
+
+        .picture-selector {
+            display: flex; gap: 8px; margin: 6px 0; flex-wrap: wrap; justify-content: center;
+        }
+        .pic-btn {
+            padding: 6px 16px; border-radius: 14px; border: 3px solid #c3bef7;
+            background: white; font-family: 'Nanum Pen Script', cursive;
+            font-size: 18px; cursor: pointer; transition: all 0.2s;
+        }
+        .pic-btn.active { background: #a8a0e8; color: white; border-color: #9088d8; }
+
+        .canvas-wrap {
+            position: relative; background: white; border-radius: 16px;
+            border: 4px solid #d4d0f0; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            touch-action: none; overflow: hidden;
+        }
+        canvas { display: block; }
+
+        .heart-particle {
+            position: fixed; pointer-events: none; z-index: 200; font-size: 20px;
+            animation: heartBurst var(--duration, 1s) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        @keyframes heartBurst {
+            0% { opacity: 1; transform: translate(0, 0) scale(0.3) rotate(0deg); }
+            20% { opacity: 1; transform: translate(var(--tx20), var(--ty20)) scale(1.2) rotate(var(--rot)); }
+            60% { opacity: 1; transform: translate(var(--tx60), var(--ty60)) scale(1) rotate(var(--rot2)); }
+            100% { opacity: 0; transform: translate(var(--tx100), var(--ty100)) scale(0.5) rotate(var(--rot3)); }
+        }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.7);
+            justify-content: center; align-items: center; z-index: 100;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: white; border-radius: 24px; padding: 32px;
+            text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 320px;
+        }
+        .modal-content h2 { font-size: 36px; color: #a8a0e8; margin-bottom: 10px; }
+        .modal-content p { font-size: 24px; color: #666; margin: 8px 0; }
+        .modal-btn {
+            padding: 12px 32px; border: none; border-radius: 14px;
+            font-family: 'Nanum Pen Script', cursive; font-size: 24px;
+            color: white; cursor: pointer; margin: 6px; transition: all 0.2s;
+        }
+        .btn-next { background: linear-gradient(135deg, #c3bef7 0%, #a8a0e8 100%); }
+        .btn-home { background: linear-gradient(135deg, #87ceeb 0%, #6bb3d9 100%); }
+    </style>
+</head>
+<body>
+    <a class="back-btn" href="index.html">← 뒤로</a>
+    <div class="title-row">
+        <h1>🔢 숫자 잇기</h1>
+        <button class="help-btn" onclick="document.getElementById('help-overlay').classList.add('show')">사용법</button>
+    </div>
+
+    <div class="help-overlay" id="help-overlay" onclick="if(event.target===this)this.classList.remove('show')">
+        <div class="help-box">
+            <h3>🔢 숫자 잇기 규칙</h3>
+            <p>1. 숫자 1번부터 순서대로 터치!</p>
+            <p>2. 점을 이으면 그림이 나타나요</p>
+            <p>3. 마지막까지 이으면 완성!</p>
+            <p>4. 다른 그림도 도전해요!</p>
+            <button class="help-close" onclick="document.getElementById('help-overlay').classList.remove('show')">알겠어요!</button>
+        </div>
+    </div>
+
+    <div class="status" id="status">1번부터 순서대로 눌러요!</div>
+    <div class="picture-selector" id="pic-selector"></div>
+    <div class="canvas-wrap" id="canvas-wrap">
+        <canvas id="canvas"></canvas>
+    </div>
+    <div class="encourage" id="encourage"></div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h2 id="modal-title">🎉 완성!</h2>
+            <p id="modal-emoji" style="font-size:60px;"></p>
+            <p id="modal-text"></p>
+            <button class="modal-btn btn-next" onclick="nextPicture()">다음 그림</button>
+            <button class="modal-btn btn-home" onclick="window.location.href='index.html'">홈으로</button>
+        </div>
+    </div>
+
+    <script>
+        let audioCtx = null;
+        function getAudioCtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+        function playTone(f, d, t, v) { try { const c = getAudioCtx(), o = c.createOscillator(), g = c.createGain(); o.type = t||'sine'; o.frequency.value = f; g.gain.value = v||0.15; g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+d); o.connect(g); g.connect(c.destination); o.start(c.currentTime); o.stop(c.currentTime+d); } catch(e){} }
+        function playDotSound(i, total) {
+            const freq = 300 + (i / total) * 500;
+            playTone(freq, 0.1, 'sine', 0.15);
+        }
+        function playCompleteSound() {
+            playTone(523, 0.12, 'sine', 0.18);
+            setTimeout(() => playTone(659, 0.12, 'sine', 0.18), 80);
+            setTimeout(() => playTone(784, 0.12, 'sine', 0.18), 160);
+            setTimeout(() => playTone(1047, 0.2, 'triangle', 0.15), 240);
+        }
+
+        function spawnHeartExplosion(x, y, count) {
+            const hearts = ['❤️','💕','💗','💖','💓'];
+            for (let i = 0; i < (count||18); i++) {
+                const h = document.createElement('div'); h.className = 'heart-particle';
+                h.textContent = hearts[Math.floor(Math.random()*hearts.length)];
+                const angle = (Math.PI*2*i)/count+(Math.random()-0.5)*0.6;
+                const dist = 60+Math.random()*100;
+                const rot = (Math.random()-0.5)*60, dur = 0.7+Math.random()*0.6, sz = 14+Math.random()*14;
+                h.style.cssText = `left:${x}px;top:${y}px;font-size:${sz}px;--tx20:${Math.cos(angle)*dist*0.3}px;--ty20:${Math.sin(angle)*dist*0.3-20}px;--tx60:${Math.cos(angle)*dist*0.7}px;--ty60:${Math.sin(angle)*dist*0.7-10}px;--tx100:${Math.cos(angle)*dist}px;--ty100:${Math.sin(angle)*dist+30}px;--rot:${rot}deg;--rot2:${rot*1.5}deg;--rot3:${rot*2}deg;--duration:${dur}s;`;
+                document.body.appendChild(h); setTimeout(() => h.remove(), dur*1000+50);
+            }
+        }
+
+        const ENCOURAGE = ['현오~ 잘했어요!!!','현오~ 멋져요!!!','현오~ 대단해요!!!'];
+        function showEncourage() {
+            const el = document.getElementById('encourage');
+            el.textContent = ENCOURAGE[Math.floor(Math.random()*ENCOURAGE.length)];
+            el.className = 'encourage'; void el.offsetHeight; el.className = 'encourage pop';
+            const r = el.getBoundingClientRect();
+            spawnHeartExplosion(r.left+r.width/2, r.top+r.height/2, 18);
+        }
+
+        // Pictures: arrays of {x, y} normalized 0-1
+        const PICTURES = [
+            {
+                name: '🦕 공룡', emoji: '🦕',
+                dots: [
+                    {x:0.65,y:0.15},{x:0.72,y:0.22},{x:0.75,y:0.32},{x:0.70,y:0.42},
+                    {x:0.62,y:0.50},{x:0.68,y:0.60},{x:0.72,y:0.72},{x:0.68,y:0.85},
+                    {x:0.55,y:0.85},{x:0.50,y:0.72},{x:0.42,y:0.85},{x:0.30,y:0.85},
+                    {x:0.35,y:0.70},{x:0.28,y:0.58},{x:0.20,y:0.50},{x:0.15,y:0.40},
+                    {x:0.22,y:0.30},{x:0.35,y:0.25},{x:0.48,y:0.22},{x:0.58,y:0.18}
+                ]
+            },
+            {
+                name: '⭐ 별', emoji: '⭐',
+                dots: [
+                    {x:0.50,y:0.10},{x:0.58,y:0.35},{x:0.85,y:0.35},
+                    {x:0.65,y:0.52},{x:0.73,y:0.80},{x:0.50,y:0.65},
+                    {x:0.27,y:0.80},{x:0.35,y:0.52},{x:0.15,y:0.35},
+                    {x:0.42,y:0.35}
+                ]
+            },
+            {
+                name: '🏠 집', emoji: '🏠',
+                dots: [
+                    {x:0.50,y:0.12},{x:0.80,y:0.38},{x:0.80,y:0.85},
+                    {x:0.58,y:0.85},{x:0.58,y:0.62},{x:0.42,y:0.62},
+                    {x:0.42,y:0.85},{x:0.20,y:0.85},{x:0.20,y:0.38}
+                ]
+            },
+            {
+                name: '🐟 물고기', emoji: '🐟',
+                dots: [
+                    {x:0.75,y:0.45},{x:0.68,y:0.30},{x:0.55,y:0.22},
+                    {x:0.40,y:0.25},{x:0.28,y:0.35},{x:0.18,y:0.45},
+                    {x:0.10,y:0.35},{x:0.05,y:0.50},{x:0.10,y:0.65},
+                    {x:0.18,y:0.55},{x:0.28,y:0.65},{x:0.40,y:0.75},
+                    {x:0.55,y:0.78},{x:0.68,y:0.70}
+                ]
+            },
+            {
+                name: '🌲 나무', emoji: '🌲',
+                dots: [
+                    {x:0.50,y:0.08},{x:0.70,y:0.30},{x:0.60,y:0.30},
+                    {x:0.75,y:0.52},{x:0.62,y:0.52},{x:0.78,y:0.72},
+                    {x:0.58,y:0.72},{x:0.58,y:0.92},{x:0.42,y:0.92},
+                    {x:0.42,y:0.72},{x:0.22,y:0.72},{x:0.38,y:0.52},
+                    {x:0.25,y:0.52},{x:0.40,y:0.30},{x:0.30,y:0.30}
+                ]
+            }
+        ];
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let currentPic = 0;
+        let nextDot = 0;
+        let cw, ch;
+        const DOT_RADIUS = 18;
+
+        function initCanvas() {
+            cw = Math.min(370, window.innerWidth - 20);
+            ch = Math.min(400, window.innerHeight - 200);
+            canvas.width = cw;
+            canvas.height = ch;
+            canvas.style.width = cw + 'px';
+            canvas.style.height = ch + 'px';
+        }
+
+        function initPicSelector() {
+            const sel = document.getElementById('pic-selector');
+            sel.innerHTML = '';
+            PICTURES.forEach((p, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'pic-btn' + (i === 0 ? ' active' : '');
+                btn.textContent = p.name;
+                btn.onclick = () => {
+                    currentPic = i;
+                    document.querySelectorAll('.pic-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    startPicture();
+                };
+                sel.appendChild(btn);
+            });
+        }
+
+        function startPicture() {
+            nextDot = 0;
+            document.getElementById('status').textContent = '1번부터 순서대로 눌러요!';
+            document.getElementById('encourage').textContent = '';
+            drawScene();
+        }
+
+        function drawScene() {
+            ctx.clearRect(0, 0, cw, ch);
+            const pic = PICTURES[currentPic];
+            const dots = pic.dots;
+
+            // Draw completed lines
+            if (nextDot > 0) {
+                ctx.beginPath();
+                ctx.strokeStyle = '#a8a0e8';
+                ctx.lineWidth = 3;
+                ctx.lineJoin = 'round';
+                ctx.moveTo(dots[0].x * cw, dots[0].y * ch);
+                for (let i = 1; i < nextDot; i++) {
+                    ctx.lineTo(dots[i].x * cw, dots[i].y * ch);
+                }
+                // Close if complete
+                if (nextDot >= dots.length) {
+                    ctx.lineTo(dots[0].x * cw, dots[0].y * ch);
+                }
+                ctx.stroke();
+            }
+
+            // Draw dots
+            dots.forEach((d, i) => {
+                const x = d.x * cw, y = d.y * ch;
+                const done = i < nextDot;
+                const isNext = i === nextDot;
+
+                // Circle
+                ctx.beginPath();
+                ctx.arc(x, y, DOT_RADIUS, 0, Math.PI * 2);
+                if (done) {
+                    ctx.fillStyle = '#a8a0e8';
+                } else if (isNext) {
+                    ctx.fillStyle = '#ffe66d';
+                } else {
+                    ctx.fillStyle = '#f0f0f0';
+                }
+                ctx.fill();
+                ctx.strokeStyle = done ? '#8878c8' : (isNext ? '#e0b000' : '#ccc');
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Number
+                ctx.fillStyle = done ? 'white' : '#555';
+                ctx.font = 'bold 16px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(i + 1, x, y);
+            });
+        }
+
+        function handleTap(e) {
+            e.preventDefault();
+            const pic = PICTURES[currentPic];
+            if (nextDot >= pic.dots.length) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const t = e.touches ? e.touches[0] : e;
+            const tx = t.clientX - rect.left;
+            const ty = t.clientY - rect.top;
+
+            const target = pic.dots[nextDot];
+            const dx = tx - target.x * cw;
+            const dy = ty - target.y * ch;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < DOT_RADIUS + 10) {
+                playDotSound(nextDot, pic.dots.length);
+                nextDot++;
+                document.getElementById('status').textContent =
+                    nextDot >= pic.dots.length ? '완성!' : `다음: ${nextDot + 1}번`;
+
+                if (nextDot % 5 === 0 && nextDot < pic.dots.length) showEncourage();
+
+                drawScene();
+
+                if (nextDot >= pic.dots.length) {
+                    // Complete!
+                    setTimeout(() => {
+                        playCompleteSound();
+                        showEncourage();
+                        document.getElementById('modal').classList.add('show');
+                        document.getElementById('modal-emoji').textContent = pic.emoji;
+                        document.getElementById('modal-text').textContent = pic.name + ' 완성!';
+                        spawnHeartExplosion(window.innerWidth/2, window.innerHeight/2, 25);
+                    }, 400);
+                }
+            }
+        }
+
+        function nextPicture() {
+            document.getElementById('modal').classList.remove('show');
+            currentPic = (currentPic + 1) % PICTURES.length;
+            document.querySelectorAll('.pic-btn').forEach((b, i) => b.classList.toggle('active', i === currentPic));
+            startPicture();
+        }
+
+        canvas.addEventListener('click', handleTap);
+        canvas.addEventListener('touchstart', handleTap, { passive: false });
+        document.body.addEventListener('touchmove', (e) => {
+            if (e.target === canvas) e.preventDefault();
+        }, { passive: false });
+
+        initCanvas();
+        initPicSelector();
+        startPicture();
+    </script>
+</body>
+</html>

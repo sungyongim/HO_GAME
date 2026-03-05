@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>HO_GAME - 풍선 터뜨리기</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Nanum Pen Script', cursive;
+            background: linear-gradient(180deg, #87ceeb 0%, #e0f0ff 60%, #c8e8c8 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 4px;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .back-btn {
+            position: fixed; top: 6px; left: 6px;
+            background: rgba(255,255,255,0.9); border: 3px solid #ddd; border-radius: 12px;
+            padding: 6px 12px; font-family: 'Nanum Pen Script', cursive;
+            font-size: 16px; cursor: pointer; z-index: 50;
+            text-decoration: none; color: black;
+        }
+        .title-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
+        h1 { font-size: 28px; color: #ff7777; text-shadow: 2px 2px 0 #ffe66d; margin-bottom: 2px; }
+        .help-btn {
+            border-radius: 12px; border: 3px solid #ff9999; background: white;
+            color: #ff9999; font-family: 'Nanum Pen Script', cursive;
+            font-size: 16px; cursor: pointer; padding: 2px 10px;
+        }
+        .help-btn:hover { background: #ff9999; color: white; }
+        .help-overlay {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+            justify-content: center; align-items: center; z-index: 150;
+        }
+        .help-overlay.show { display: flex; }
+        .help-box {
+            background: white; border-radius: 20px; padding: 24px;
+            max-width: 320px; width: 90%; box-shadow: 0 16px 48px rgba(0,0,0,0.25); text-align: left;
+        }
+        .help-box h3 { font-size: 26px; color: #ff9999; margin-bottom: 10px; text-align: center; }
+        .help-box p { font-size: 20px; color: #555; line-height: 1.5; margin: 5px 0; }
+        .help-close {
+            display: block; margin: 14px auto 0; padding: 8px 28px; border: none;
+            border-radius: 12px; background: #ff9999; color: white;
+            font-family: 'Nanum Pen Script', cursive; font-size: 20px; cursor: pointer;
+        }
+
+        .top-bar {
+            display: flex; gap: 16px; align-items: center; margin: 4px 0;
+            padding: 4px 16px; background: rgba(255,255,255,0.8); border-radius: 20px;
+        }
+        .score-display { font-size: 24px; color: #ff7777; }
+        .timer-display { font-size: 24px; color: #5588cc; }
+        .combo-display { font-size: 22px; color: #ff9900; min-width: 80px; text-align: center; }
+
+        .encourage {
+            font-size: 28px; color: #ff7777; min-height: 32px;
+            text-align: center; margin: 2px 0;
+        }
+        .encourage.pop { animation: encouragePop 2s ease-out forwards; }
+        @keyframes encouragePop {
+            0% { opacity: 0; transform: scale(0.3); }
+            15% { opacity: 1; transform: scale(1.3); }
+            30% { transform: scale(1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; transform: scale(1) translateY(-10px); }
+        }
+
+        .game-area {
+            position: relative;
+            width: 100%;
+            flex: 1;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .balloon {
+            position: absolute;
+            font-size: 48px;
+            cursor: pointer;
+            transition: transform 0.1s;
+            animation: float linear forwards;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));
+        }
+        .balloon:active { transform: scale(1.2); }
+
+        @keyframes float {
+            from { transform: translateY(0); }
+            to { transform: translateY(calc(-100vh - 80px)); }
+        }
+
+        .pop-effect {
+            position: absolute;
+            font-size: 36px;
+            pointer-events: none;
+            animation: popAnim 0.5s ease-out forwards;
+        }
+        @keyframes popAnim {
+            0% { transform: scale(0.5); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        .score-popup {
+            position: absolute;
+            pointer-events: none;
+            font-size: 26px;
+            font-family: 'Nanum Pen Script', cursive;
+            font-weight: bold;
+            animation: scoreFloat 0.7s ease-out forwards;
+            z-index: 60;
+        }
+        @keyframes scoreFloat {
+            0% { opacity: 1; transform: translateY(0) scale(0.8); }
+            100% { opacity: 0; transform: translateY(-40px) scale(1.2); }
+        }
+
+        .start-btn {
+            padding: 14px 44px; border: none; border-radius: 20px;
+            background: linear-gradient(135deg, #ffcccc 0%, #ff9999 100%);
+            font-family: 'Nanum Pen Script', cursive; font-size: 28px;
+            color: white; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            border: 4px solid #e88080; margin: 8px 0; z-index: 10;
+        }
+
+        .heart-particle {
+            position: fixed; pointer-events: none; z-index: 200; font-size: 20px;
+            animation: heartBurst var(--duration, 1s) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        @keyframes heartBurst {
+            0% { opacity: 1; transform: translate(0, 0) scale(0.3) rotate(0deg); }
+            20% { opacity: 1; transform: translate(var(--tx20), var(--ty20)) scale(1.2) rotate(var(--rot)); }
+            60% { opacity: 1; transform: translate(var(--tx60), var(--ty60)) scale(1) rotate(var(--rot2)); }
+            100% { opacity: 0; transform: translate(var(--tx100), var(--ty100)) scale(0.5) rotate(var(--rot3)); }
+        }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.7);
+            justify-content: center; align-items: center; z-index: 100;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: white; border-radius: 24px; padding: 32px;
+            text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 320px;
+        }
+        .modal-content h2 { font-size: 36px; color: #ff7777; margin-bottom: 10px; }
+        .modal-content p { font-size: 24px; color: #666; margin: 8px 0; }
+        .modal-btn {
+            padding: 12px 32px; border: none; border-radius: 14px;
+            font-family: 'Nanum Pen Script', cursive; font-size: 24px;
+            color: white; cursor: pointer; margin: 6px;
+        }
+        .btn-restart { background: linear-gradient(135deg, #ffcccc 0%, #ff9999 100%); }
+        .btn-home { background: linear-gradient(135deg, #87ceeb 0%, #6bb3d9 100%); }
+
+        .sticker-bar {
+            display: flex; gap: 4px; padding: 4px 10px; background: rgba(255,255,255,0.8);
+            border-radius: 30px; margin: 3px 0; min-height: 30px; align-items: center;
+            flex-wrap: wrap; justify-content: center; z-index: 10;
+        }
+        .sticker { font-size: 18px; animation: stickerPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        @keyframes stickerPop {
+            0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+            70% { transform: scale(1.3) rotate(10deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        .sticker-label { font-size: 14px; color: #ccc; }
+    </style>
+</head>
+<body>
+    <a class="back-btn" href="index.html">← 뒤로</a>
+    <div class="title-row">
+        <h1>🫧 풍선 터뜨리기</h1>
+        <button class="help-btn" onclick="document.getElementById('help-overlay').classList.add('show')">사용법</button>
+    </div>
+
+    <div class="help-overlay" id="help-overlay" onclick="if(event.target===this)this.classList.remove('show')">
+        <div class="help-box">
+            <h3>🫧 풍선 터뜨리기 규칙</h3>
+            <p>1. 올라오는 풍선을 터치해요!</p>
+            <p>2. 🎈 풍선 = +1점</p>
+            <p>3. ⭐ 별 풍선 = +3점 보너스!</p>
+            <p>4. 💣 폭탄은 터치하면 안 돼요! (-3점)</p>
+            <p>5. 30초 안에 많이 터뜨려요!</p>
+            <p>💡 같은 색 연속이면 콤보!</p>
+            <button class="help-close" onclick="document.getElementById('help-overlay').classList.remove('show')">알겠어요!</button>
+        </div>
+    </div>
+
+    <div class="top-bar">
+        <div class="score-display">점수: <span id="score">0</span></div>
+        <div class="timer-display">⏱ <span id="timer">30</span>초</div>
+        <div class="combo-display" id="combo"></div>
+    </div>
+    <div class="sticker-bar" id="sticker-bar">
+        <span class="sticker-label" id="sticker-label">스티커를 모아봐요!</span>
+    </div>
+    <div class="encourage" id="encourage"></div>
+
+    <div class="game-area" id="game-area"></div>
+
+    <button class="start-btn" id="start-btn" onclick="startGame()">🎈 게임 시작!</button>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h2 id="modal-title">🎉 잘했어요!</h2>
+            <p id="modal-score"></p>
+            <p id="modal-detail"></p>
+            <div id="modal-stickers" style="font-size:24px;margin:8px 0;"></div>
+            <button class="modal-btn btn-restart" onclick="restartGame()">다시하기</button>
+            <button class="modal-btn btn-home" onclick="window.location.href='index.html'">홈으로</button>
+        </div>
+    </div>
+
+    <script>
+        let audioCtx = null;
+        function getAudioCtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+        function playTone(f, d, t, v) { try { const c = getAudioCtx(), o = c.createOscillator(), g = c.createGain(); o.type = t||'sine'; o.frequency.value = f; g.gain.value = v||0.15; g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+d); o.connect(g); g.connect(c.destination); o.start(c.currentTime); o.stop(c.currentTime+d); } catch(e){} }
+        function playPopSound() { playTone(600+Math.random()*200, 0.08, 'sine', 0.12); }
+        function playBonusSound() { playTone(784, 0.1, 'sine', 0.18); setTimeout(() => playTone(988, 0.1, 'sine', 0.18), 70); setTimeout(() => playTone(1175, 0.15, 'triangle', 0.12), 140); }
+        function playBombSound() { playTone(150, 0.3, 'square', 0.1); setTimeout(() => playTone(100, 0.3, 'square', 0.08), 150); }
+        function playStickerSound() { playTone(880, 0.08, 'sine', 0.12); setTimeout(() => playTone(1108, 0.08, 'sine', 0.12), 60); }
+
+        function spawnHeartExplosion(x, y, count) {
+            const hearts = ['❤️','💕','💗','💖','💓'];
+            for (let i = 0; i < (count||18); i++) {
+                const h = document.createElement('div'); h.className = 'heart-particle';
+                h.textContent = hearts[Math.floor(Math.random()*hearts.length)];
+                const angle = (Math.PI*2*i)/count+(Math.random()-0.5)*0.6;
+                const dist = 60+Math.random()*100;
+                const rot = (Math.random()-0.5)*60, dur = 0.7+Math.random()*0.6, sz = 14+Math.random()*14;
+                h.style.cssText = `left:${x}px;top:${y}px;font-size:${sz}px;--tx20:${Math.cos(angle)*dist*0.3}px;--ty20:${Math.sin(angle)*dist*0.3-20}px;--tx60:${Math.cos(angle)*dist*0.7}px;--ty60:${Math.sin(angle)*dist*0.7-10}px;--tx100:${Math.cos(angle)*dist}px;--ty100:${Math.sin(angle)*dist+30}px;--rot:${rot}deg;--rot2:${rot*1.5}deg;--rot3:${rot*2}deg;--duration:${dur}s;`;
+                document.body.appendChild(h); setTimeout(() => h.remove(), dur*1000+50);
+            }
+        }
+
+        const ENCOURAGE = ['현오~ 잘했어요!!!','현오~ 멋져요!!!','현오~ 빠르다!!!','현오~ 대단해요!!!'];
+        function showEncourage() {
+            const el = document.getElementById('encourage');
+            el.textContent = ENCOURAGE[Math.floor(Math.random()*ENCOURAGE.length)];
+            el.className = 'encourage'; void el.offsetHeight; el.className = 'encourage pop';
+            const r = el.getBoundingClientRect();
+            spawnHeartExplosion(r.left+r.width/2, r.top+r.height/2, 18);
+        }
+
+        // Sticker
+        const STICKER_MILESTONES = [5, 12, 20, 30, 45, 60];
+        const STICKER_ICONS = ['⭐','🌟','🏅','🎖️','🏆','👑'];
+        let earnedStickers = [], lastStickerIndex = -1;
+        function checkStickerMilestone(s) {
+            for (let i = lastStickerIndex+1; i < STICKER_MILESTONES.length; i++) {
+                if (s >= STICKER_MILESTONES[i]) {
+                    lastStickerIndex = i; earnedStickers.push(STICKER_ICONS[i]);
+                    const bar = document.getElementById('sticker-bar');
+                    const lbl = document.getElementById('sticker-label'); if (lbl) lbl.remove();
+                    const sp = document.createElement('span'); sp.className = 'sticker'; sp.textContent = STICKER_ICONS[i]; bar.appendChild(sp);
+                    playStickerSound();
+                    const r = bar.getBoundingClientRect();
+                    spawnHeartExplosion(r.left+r.width/2, r.top+r.height/2, 12);
+                } else break;
+            }
+        }
+
+        // Game
+        const BALLOONS = ['🎈','🟡','🔵','🟢','🟣','🔴'];
+        const BONUS = '⭐';
+        const BOMB = '💣';
+
+        let score = 0, popped = 0, timeLeft = 30, combo = 0, lastColor = '';
+        let gameRunning = false, gameTimer, spawnTimer;
+
+        function startGame() {
+            score = 0; popped = 0; timeLeft = 30; combo = 0; lastColor = '';
+            gameRunning = true;
+            earnedStickers = []; lastStickerIndex = -1;
+            document.getElementById('sticker-bar').innerHTML = '<span class="sticker-label" id="sticker-label">스티커를 모아봐요!</span>';
+            document.getElementById('score').textContent = '0';
+            document.getElementById('timer').textContent = '30';
+            document.getElementById('combo').textContent = '';
+            document.getElementById('encourage').textContent = '';
+            document.getElementById('start-btn').style.display = 'none';
+            document.getElementById('game-area').innerHTML = '';
+
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                if (timeLeft <= 0) endGame();
+            }, 1000);
+
+            scheduleSpawn();
+        }
+
+        function scheduleSpawn() {
+            if (!gameRunning) return;
+            const elapsed = 30 - timeLeft;
+            const delay = Math.max(300, 700 - elapsed * 12);
+            spawnTimer = setTimeout(() => {
+                if (!gameRunning) return;
+                spawnBalloon();
+                scheduleSpawn();
+            }, delay + Math.random() * 300);
+        }
+
+        function spawnBalloon() {
+            const area = document.getElementById('game-area');
+            const areaW = area.offsetWidth;
+            const areaH = area.offsetHeight;
+
+            const el = document.createElement('div');
+            el.className = 'balloon';
+
+            const roll = Math.random();
+            let type, emoji;
+            if (roll < 0.08) { type = 'bonus'; emoji = BONUS; }
+            else if (roll < 0.18) { type = 'bomb'; emoji = BOMB; }
+            else { type = 'normal'; emoji = BALLOONS[Math.floor(Math.random() * BALLOONS.length)]; }
+
+            el.textContent = emoji;
+            el.dataset.type = type;
+            el.dataset.emoji = emoji;
+
+            const x = 20 + Math.random() * (areaW - 70);
+            el.style.left = x + 'px';
+            el.style.bottom = '-60px';
+
+            const speed = 3 + Math.random() * 3;
+            el.style.animationDuration = speed + 's';
+
+            const handler = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                tapBalloon(el);
+            };
+            el.addEventListener('touchstart', handler, { passive: false });
+            el.addEventListener('mousedown', handler);
+
+            area.appendChild(el);
+
+            // Remove when off screen
+            setTimeout(() => { if (el.parentNode) el.remove(); }, speed * 1000 + 100);
+        }
+
+        function tapBalloon(el) {
+            if (!gameRunning || !el.parentNode) return;
+            const type = el.dataset.type;
+            const emoji = el.dataset.emoji;
+            const rect = el.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+
+            if (type === 'bomb') {
+                score = Math.max(0, score - 3);
+                combo = 0; lastColor = '';
+                document.getElementById('score').textContent = score;
+                document.getElementById('combo').textContent = '';
+                playBombSound();
+                showPopEffect(el, '💥');
+                showScorePopup(cx, cy, '-3', '#ff4757');
+            } else {
+                const pts = type === 'bonus' ? 3 : 1;
+
+                // Combo check
+                if (type === 'normal' && emoji === lastColor) {
+                    combo++;
+                    if (combo >= 3) {
+                        document.getElementById('combo').textContent = `🔥 콤보 x${combo}`;
+                    }
+                } else {
+                    combo = type === 'normal' ? 1 : 0;
+                    lastColor = type === 'normal' ? emoji : '';
+                    document.getElementById('combo').textContent = '';
+                }
+
+                const totalPts = pts + (combo >= 3 ? 1 : 0);
+                score += totalPts;
+                popped++;
+                document.getElementById('score').textContent = score;
+                checkStickerMilestone(score);
+
+                if (type === 'bonus') playBonusSound(); else playPopSound();
+                showPopEffect(el, '✨');
+                showScorePopup(cx, cy, `+${totalPts}`, type === 'bonus' ? '#ffd700' : '#ff7777');
+
+                if (popped % 8 === 0) showEncourage();
+            }
+
+            el.remove();
+        }
+
+        function showPopEffect(el, text) {
+            const pop = document.createElement('div');
+            pop.className = 'pop-effect';
+            pop.textContent = text;
+            pop.style.left = el.style.left;
+            pop.style.bottom = el.style.bottom;
+            el.parentNode.appendChild(pop);
+            setTimeout(() => pop.remove(), 500);
+        }
+
+        function showScorePopup(x, y, text, color) {
+            const p = document.createElement('div');
+            p.className = 'score-popup'; p.textContent = text;
+            p.style.left = x + 'px'; p.style.top = y + 'px'; p.style.color = color;
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 700);
+        }
+
+        function endGame() {
+            gameRunning = false;
+            clearInterval(gameTimer); clearTimeout(spawnTimer);
+            setTimeout(() => {
+                document.getElementById('modal').classList.add('show');
+                document.getElementById('modal-title').textContent = score >= 25 ? '🎉 대단해요!' : '🎈 잘했어요!';
+                document.getElementById('modal-score').textContent = `점수: ${score}점`;
+                document.getElementById('modal-detail').textContent = `터뜨린 풍선: ${popped}개`;
+                document.getElementById('modal-stickers').textContent = earnedStickers.length > 0 ? '스티커: ' + earnedStickers.join(' ') : '';
+                spawnHeartExplosion(window.innerWidth/2, window.innerHeight/2, 25);
+                if (score >= 25) playBonusSound();
+            }, 300);
+        }
+
+        function restartGame() {
+            document.getElementById('modal').classList.remove('show');
+            startGame();
+        }
+
+        document.body.addEventListener('touchmove', (e) => {
+            if (e.target.closest('.game-area')) e.preventDefault();
+        }, { passive: false });
+    </script>
+</body>
+</html>

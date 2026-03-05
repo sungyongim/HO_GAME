@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>HO_GAME - 자유 그림판</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Nanum Pen Script', cursive;
+            background: linear-gradient(135deg, #fff8f0 0%, #f0f8ff 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 4px;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .back-btn {
+            position: fixed; top: 6px; left: 6px;
+            background: white; border: 3px solid #ddd; border-radius: 12px;
+            padding: 6px 12px; font-family: 'Nanum Pen Script', cursive;
+            font-size: 16px; cursor: pointer; z-index: 50;
+            text-decoration: none; color: black;
+        }
+        .title-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 2px; }
+        h1 { font-size: 26px; color: #88d8b0; text-shadow: 2px 2px 0 #ffe66d; }
+        .help-btn {
+            border-radius: 12px; border: 3px solid #88d8b0; background: white;
+            color: #88d8b0; font-family: 'Nanum Pen Script', cursive;
+            font-size: 16px; cursor: pointer; padding: 2px 10px;
+        }
+        .help-btn:hover { background: #88d8b0; color: white; }
+        .help-overlay {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+            justify-content: center; align-items: center; z-index: 150;
+        }
+        .help-overlay.show { display: flex; }
+        .help-box {
+            background: white; border-radius: 20px; padding: 24px;
+            max-width: 320px; width: 90%; box-shadow: 0 16px 48px rgba(0,0,0,0.25); text-align: left;
+        }
+        .help-box h3 { font-size: 26px; color: #88d8b0; margin-bottom: 10px; text-align: center; }
+        .help-box p { font-size: 20px; color: #555; line-height: 1.5; margin: 5px 0; }
+        .help-close {
+            display: block; margin: 14px auto 0; padding: 8px 28px; border: none;
+            border-radius: 12px; background: #88d8b0; color: white;
+            font-family: 'Nanum Pen Script', cursive; font-size: 20px; cursor: pointer;
+        }
+
+        #canvas {
+            border-radius: 12px; border: 3px solid #c8e8d8;
+            background: white; touch-action: none;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        .toolbar {
+            display: flex; gap: 6px; margin: 4px 0; flex-wrap: wrap;
+            justify-content: center; align-items: center;
+            padding: 6px 10px; background: white; border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08); border: 2px solid #d8f0e0;
+        }
+        .color-dot {
+            width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+            border: 3px solid transparent; transition: all 0.15s;
+        }
+        .color-dot.active { border-color: #333; transform: scale(1.15); }
+        .tool-btn {
+            padding: 4px 12px; border-radius: 16px; border: 2px solid #ddd;
+            background: white; font-family: 'Nanum Pen Script', cursive;
+            font-size: 17px; cursor: pointer; transition: all 0.2s;
+        }
+        .tool-btn.active { background: #88d8b0; color: white; border-color: #68c890; }
+        .size-slider {
+            width: 80px; height: 6px; -webkit-appearance: none; appearance: none;
+            background: #ddd; border-radius: 3px; outline: none;
+        }
+        .size-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 20px; height: 20px;
+            border-radius: 50%; background: #88d8b0; cursor: pointer;
+        }
+
+        .sticker-bar {
+            display: flex; gap: 6px; margin: 2px 0; flex-wrap: wrap; justify-content: center;
+        }
+        .sticker-item {
+            font-size: 28px; cursor: pointer; transition: transform 0.15s;
+            padding: 2px;
+        }
+        .sticker-item:active { transform: scale(1.3); }
+        .sticker-item.active { background: #e8f8f0; border-radius: 8px; }
+
+        .mode-row {
+            display: flex; gap: 6px; align-items: center;
+        }
+
+        @media (max-width: 380px) {
+            .color-dot { width: 28px; height: 28px; }
+            .sticker-item { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <a class="back-btn" href="index.html">← 뒤로</a>
+    <div class="title-row">
+        <h1>🖌️ 자유 그림판</h1>
+        <button class="help-btn" onclick="document.getElementById('help-overlay').classList.add('show')">사용법</button>
+    </div>
+
+    <div class="help-overlay" id="help-overlay" onclick="if(event.target===this)this.classList.remove('show')">
+        <div class="help-box">
+            <h3>🖌️ 자유 그림판 규칙</h3>
+            <p>1. 색깔을 골라요</p>
+            <p>2. 손가락으로 자유롭게 그려요</p>
+            <p>3. 🧹 지우개로 지울 수 있어요</p>
+            <p>4. 스티커를 선택 후 터치하면 붙여요</p>
+            <p>5. 🗑️ 전체 지우기로 새로 시작!</p>
+            <button class="help-close" onclick="document.getElementById('help-overlay').classList.remove('show')">알겠어요!</button>
+        </div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div class="toolbar" id="toolbar">
+        <div class="mode-row">
+            <button class="tool-btn active" id="btn-pen" onclick="setMode('pen')">✏️ 펜</button>
+            <button class="tool-btn" id="btn-eraser" onclick="setMode('eraser')">🧹 지우개</button>
+            <button class="tool-btn" id="btn-sticker-mode" onclick="setMode('sticker')">⭐ 스티커</button>
+            <button class="tool-btn" onclick="clearCanvas()">🗑️</button>
+        </div>
+        <input type="range" class="size-slider" id="size-slider" min="2" max="20" value="6">
+    </div>
+
+    <div class="toolbar" id="color-bar"></div>
+
+    <div class="sticker-bar" id="sticker-bar" style="display:none;"></div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const COLORS = ['#e74c3c','#e67e22','#f1c40f','#2ecc71','#3498db','#9b59b6','#e91e8c','#795548','#000000','#ffffff'];
+        const STICKERS = ['🦕','🦖','🤖','🚗','🦎','🐊','🥚','⭐','❤️','🌈','🌸','🎈'];
+
+        let currentColor = '#000000';
+        let lineWidth = 6;
+        let mode = 'pen'; // pen, eraser, sticker
+        let currentSticker = '🦕';
+        let drawing = false;
+        let lastX, lastY;
+
+        function initCanvas() {
+            const w = Math.min(390, window.innerWidth - 12);
+            const h = Math.min(440, window.innerHeight - 220);
+            canvas.width = w;
+            canvas.height = h;
+            canvas.style.width = w + 'px';
+            canvas.style.height = h + 'px';
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, w, h);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+        }
+
+        function initColorBar() {
+            const bar = document.getElementById('color-bar');
+            bar.innerHTML = '';
+            COLORS.forEach((c, i) => {
+                const dot = document.createElement('div');
+                dot.className = 'color-dot' + (c === '#000000' ? ' active' : '');
+                dot.style.background = c;
+                if (c === '#ffffff') dot.style.border = '3px solid #ccc';
+                dot.onclick = () => {
+                    document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+                    dot.classList.add('active');
+                    currentColor = c;
+                    if (mode === 'eraser') setMode('pen');
+                };
+                bar.appendChild(dot);
+            });
+        }
+
+        function initStickerBar() {
+            const bar = document.getElementById('sticker-bar');
+            bar.innerHTML = '';
+            STICKERS.forEach((s, i) => {
+                const item = document.createElement('div');
+                item.className = 'sticker-item' + (i === 0 ? ' active' : '');
+                item.textContent = s;
+                item.onclick = () => {
+                    document.querySelectorAll('.sticker-item').forEach(x => x.classList.remove('active'));
+                    item.classList.add('active');
+                    currentSticker = s;
+                };
+                bar.appendChild(item);
+            });
+        }
+
+        function setMode(m) {
+            mode = m;
+            document.getElementById('btn-pen').classList.toggle('active', m === 'pen');
+            document.getElementById('btn-eraser').classList.toggle('active', m === 'eraser');
+            document.getElementById('btn-sticker-mode').classList.toggle('active', m === 'sticker');
+            document.getElementById('sticker-bar').style.display = m === 'sticker' ? 'flex' : 'none';
+        }
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const t = e.touches ? e.touches[0] : e;
+            return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+        }
+
+        function startDraw(e) {
+            e.preventDefault();
+            if (mode === 'sticker') {
+                const p = getPos(e);
+                ctx.font = `${lineWidth * 4 + 16}px serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(currentSticker, p.x, p.y);
+                return;
+            }
+            drawing = true;
+            const p = getPos(e);
+            lastX = p.x; lastY = p.y;
+        }
+
+        function draw(e) {
+            e.preventDefault();
+            if (!drawing) return;
+            const p = getPos(e);
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(p.x, p.y);
+            if (mode === 'eraser') {
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = lineWidth * 3;
+            } else {
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = lineWidth;
+            }
+            ctx.stroke();
+            lastX = p.x; lastY = p.y;
+        }
+
+        function endDraw(e) {
+            e.preventDefault();
+            drawing = false;
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        canvas.addEventListener('mousedown', startDraw);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', endDraw);
+        canvas.addEventListener('mouseleave', endDraw);
+        canvas.addEventListener('touchstart', startDraw, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        canvas.addEventListener('touchend', endDraw, { passive: false });
+
+        document.getElementById('size-slider').addEventListener('input', (e) => {
+            lineWidth = parseInt(e.target.value);
+        });
+
+        document.body.addEventListener('touchmove', (e) => {
+            if (e.target === canvas) e.preventDefault();
+        }, { passive: false });
+
+        initCanvas();
+        initColorBar();
+        initStickerBar();
+    </script>
+</body>
+</html>

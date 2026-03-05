@@ -2,10 +2,16 @@
   "buildCommand": "echo 'Static site'",
   "outputDirectory": ".",
   "framework": null,
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
+  "rewrites": [
+    { "source": "/memory-match", "destination": "/memory-match.html" },
+    { "source": "/dino-catch", "destination": "/dino-catch.html" },
+    { "source": "/picture-puzzle", "destination": "/picture-puzzle.html" },
+    { "source": "/color-memory", "destination": "/color-memory.html" },
+    { "source": "/dino-coloring", "destination": "/dino-coloring.html" },
+    { "source": "/free-draw", "destination": "/free-draw.html" },
+    { "source": "/dot-connect", "destination": "/dot-connect.html" },
+    { "source": "/balloon-pop", "destination": "/balloon-pop.html" },
+    { "source": "/spot-same", "destination": "/spot-same.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

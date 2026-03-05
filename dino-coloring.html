@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>HO_GAME - 공룡 색칠하기</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Nanum Pen Script', cursive;
+            background: linear-gradient(135deg, #fff8f0 0%, #f0f8ff 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .back-btn {
+            position: fixed; top: 6px; left: 6px;
+            background: white; border: 3px solid #ddd; border-radius: 12px;
+            padding: 6px 12px; font-family: 'Nanum Pen Script', cursive;
+            font-size: 16px; cursor: pointer; z-index: 50;
+            text-decoration: none; color: black;
+        }
+        .title-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
+        h1 { font-size: 28px; color: #e0a050; text-shadow: 2px 2px 0 #ffe66d; margin-bottom: 2px; }
+        .help-btn {
+            border-radius: 12px; border: 3px solid #e0a050; background: white;
+            color: #e0a050; font-family: 'Nanum Pen Script', cursive;
+            font-size: 16px; cursor: pointer; padding: 2px 10px; flex-shrink: 0;
+        }
+        .help-btn:hover { background: #e0a050; color: white; }
+        .help-overlay {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+            justify-content: center; align-items: center; z-index: 150;
+        }
+        .help-overlay.show { display: flex; }
+        .help-box {
+            background: white; border-radius: 20px; padding: 24px;
+            max-width: 320px; width: 90%; box-shadow: 0 16px 48px rgba(0,0,0,0.25); text-align: left;
+        }
+        .help-box h3 { font-size: 26px; color: #e0a050; margin-bottom: 10px; text-align: center; }
+        .help-box p { font-size: 20px; color: #555; line-height: 1.5; margin: 5px 0; }
+        .help-close {
+            display: block; margin: 14px auto 0; padding: 8px 28px; border: none;
+            border-radius: 12px; background: #e0a050; color: white;
+            font-family: 'Nanum Pen Script', cursive; font-size: 20px; cursor: pointer;
+        }
+
+        .dino-selector {
+            display: flex; gap: 8px; margin: 6px 0; flex-wrap: wrap; justify-content: center;
+        }
+        .dino-thumb {
+            width: 56px; height: 56px; border-radius: 12px; border: 3px solid #ddd;
+            background: white; cursor: pointer; font-size: 32px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+        .dino-thumb.active { border-color: #e0a050; background: #fff8e8; transform: scale(1.1); }
+
+        .canvas-area {
+            position: relative; background: white; border-radius: 16px;
+            border: 4px solid #f0d8a8; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden; touch-action: none;
+        }
+
+        .palette {
+            display: flex; gap: 6px; margin: 8px 0; flex-wrap: wrap; justify-content: center;
+            padding: 6px 12px; background: white; border-radius: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08); border: 2px solid #f0e0c8;
+        }
+        .color-dot {
+            width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+            border: 3px solid transparent; transition: all 0.2s;
+        }
+        .color-dot.active { border-color: #333; transform: scale(1.15); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .tool-btn {
+            padding: 6px 14px; border-radius: 20px; border: 2px solid #ddd;
+            background: white; font-family: 'Nanum Pen Script', cursive;
+            font-size: 18px; cursor: pointer; transition: all 0.2s;
+        }
+        .tool-btn.active { background: #e0a050; color: white; border-color: #c89040; }
+
+        .encourage {
+            font-size: 28px; color: #e0a050; min-height: 32px;
+            text-align: center; margin: 4px 0;
+        }
+        .encourage.pop { animation: encouragePop 2s ease-out forwards; }
+        @keyframes encouragePop {
+            0% { opacity: 0; transform: scale(0.3); }
+            15% { opacity: 1; transform: scale(1.3); }
+            30% { transform: scale(1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; transform: scale(1) translateY(-10px); }
+        }
+
+        .heart-particle {
+            position: fixed; pointer-events: none; z-index: 200; font-size: 20px;
+            animation: heartBurst var(--duration, 1s) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        @keyframes heartBurst {
+            0% { opacity: 1; transform: translate(0, 0) scale(0.3) rotate(0deg); }
+            20% { opacity: 1; transform: translate(var(--tx20), var(--ty20)) scale(1.2) rotate(var(--rot)); }
+            60% { opacity: 1; transform: translate(var(--tx60), var(--ty60)) scale(1) rotate(var(--rot2)); }
+            100% { opacity: 0; transform: translate(var(--tx100), var(--ty100)) scale(0.5) rotate(var(--rot3)); }
+        }
+
+        @media (max-width: 380px) {
+            .color-dot { width: 30px; height: 30px; }
+            .dino-thumb { width: 48px; height: 48px; font-size: 26px; }
+        }
+    </style>
+</head>
+<body>
+    <a class="back-btn" href="index.html">← 뒤로</a>
+    <div class="title-row">
+        <h1>🎨 공룡 색칠하기</h1>
+        <button class="help-btn" onclick="document.getElementById('help-overlay').classList.add('show')">사용법</button>
+    </div>
+
+    <div class="help-overlay" id="help-overlay" onclick="if(event.target===this)this.classList.remove('show')">
+        <div class="help-box">
+            <h3>🎨 공룡 색칠하기 규칙</h3>
+            <p>1. 아래 색깔을 골라요</p>
+            <p>2. 공룡 부위를 터치하면 색칠!</p>
+            <p>3. 다른 공룡도 골라서 색칠해요</p>
+            <p>4. 🗑️ 버튼으로 다시 시작!</p>
+            <p>💡 예쁘게 색칠하면 하트폭죽!</p>
+            <button class="help-close" onclick="document.getElementById('help-overlay').classList.remove('show')">알겠어요!</button>
+        </div>
+    </div>
+
+    <div class="dino-selector" id="dino-selector"></div>
+    <div class="canvas-area" id="canvas-area"></div>
+    <div class="palette" id="palette"></div>
+    <div style="display:flex;gap:8px;margin:4px 0;">
+        <button class="tool-btn" onclick="resetColoring()">🗑️ 다시</button>
+    </div>
+    <div class="encourage" id="encourage"></div>
+
+    <script>
+        // Sound
+        let audioCtx = null;
+        function getAudioCtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+        function playTone(f, d, t, v) { try { const c = getAudioCtx(), o = c.createOscillator(), g = c.createGain(); o.type = t||'sine'; o.frequency.value = f; g.gain.value = v||0.15; g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+d); o.connect(g); g.connect(c.destination); o.start(c.currentTime); o.stop(c.currentTime+d); } catch(e){} }
+        function playColorSound() { playTone(523, 0.08, 'sine', 0.12); setTimeout(() => playTone(659, 0.08, 'sine', 0.12), 60); }
+
+        function spawnHeartExplosion(x, y, count) {
+            const hearts = ['❤️','💕','💗','💖','💓'];
+            for (let i = 0; i < (count||18); i++) {
+                const h = document.createElement('div'); h.className = 'heart-particle';
+                h.textContent = hearts[Math.floor(Math.random()*hearts.length)];
+                const angle = (Math.PI*2*i)/count+(Math.random()-0.5)*0.6;
+                const dist = 60+Math.random()*100;
+                const rot = (Math.random()-0.5)*60, dur = 0.7+Math.random()*0.6, sz = 14+Math.random()*14;
+                h.style.cssText = `left:${x}px;top:${y}px;font-size:${sz}px;--tx20:${Math.cos(angle)*dist*0.3}px;--ty20:${Math.sin(angle)*dist*0.3-20}px;--tx60:${Math.cos(angle)*dist*0.7}px;--ty60:${Math.sin(angle)*dist*0.7-10}px;--tx100:${Math.cos(angle)*dist}px;--ty100:${Math.sin(angle)*dist+30}px;--rot:${rot}deg;--rot2:${rot*1.5}deg;--rot3:${rot*2}deg;--duration:${dur}s;`;
+                document.body.appendChild(h); setTimeout(() => h.remove(), dur*1000+50);
+            }
+        }
+
+        const ENCOURAGE = ['현오~ 예쁘다!!!','현오~ 멋져요!!!','현오~ 최고예요!!!','현오~ 대단해요!!!','현오~ 천재 화가!!!'];
+        let colorCount = 0;
+        function showEncourage() {
+            const el = document.getElementById('encourage');
+            el.textContent = ENCOURAGE[Math.floor(Math.random()*ENCOURAGE.length)];
+            el.className = 'encourage'; void el.offsetHeight; el.className = 'encourage pop';
+            const r = el.getBoundingClientRect();
+            spawnHeartExplosion(r.left+r.width/2, r.top+r.height/2, 18);
+        }
+
+        // Dino SVG data: each dino has regions (paths) to color
+        const DINOS = [
+            {
+                name: '🦕', viewBox: '0 0 300 280',
+                regions: [
+                    { id: 'body', d: 'M80,180 Q60,120 100,80 Q140,50 180,70 Q220,50 240,80 L250,120 Q260,160 240,200 L220,220 Q180,250 140,240 Q100,240 80,220 Z', label: '몸' },
+                    { id: 'head', d: 'M240,80 Q260,40 280,50 Q290,70 270,90 Q260,100 250,95 L250,120 Q255,100 240,80 Z', label: '머리' },
+                    { id: 'tail', d: 'M80,180 Q40,170 20,200 Q10,220 30,230 Q50,230 70,210 L80,220 Z', label: '꼬리' },
+                    { id: 'leg1', d: 'M140,240 L130,270 L150,275 L155,245 Z', label: '앞다리' },
+                    { id: 'leg2', d: 'M200,235 L195,268 L215,272 L215,240 Z', label: '뒷다리' },
+                    { id: 'spot1', d: 'M150,120 Q160,100 175,110 Q180,130 165,135 Q150,135 150,120 Z', label: '무늬1' },
+                    { id: 'spot2', d: 'M190,140 Q200,125 210,135 Q215,150 205,158 Q192,155 190,140 Z', label: '무늬2' },
+                ]
+            },
+            {
+                name: '🦖', viewBox: '0 0 300 280',
+                regions: [
+                    { id: 'body', d: 'M100,160 Q80,110 120,80 Q150,65 170,80 L200,90 Q230,100 240,140 Q245,180 220,210 L180,230 Q140,240 110,220 Z', label: '몸' },
+                    { id: 'head', d: 'M200,90 Q230,50 260,60 Q280,75 270,95 Q255,105 240,100 L230,100 Q220,95 200,90 Z', label: '머리' },
+                    { id: 'jaw', d: 'M240,100 Q260,105 275,100 Q280,110 265,115 Q250,115 240,110 Z', label: '턱' },
+                    { id: 'tail', d: 'M100,160 Q60,150 35,175 Q20,195 40,210 Q55,210 80,195 L110,220 Z', label: '꼬리' },
+                    { id: 'arm1', d: 'M175,135 L165,160 L180,165 L185,140 Z', label: '팔' },
+                    { id: 'leg1', d: 'M135,230 L125,268 L145,272 L150,235 Z', label: '앞다리' },
+                    { id: 'leg2', d: 'M195,225 L190,265 L210,268 L210,228 Z', label: '뒷다리' },
+                    { id: 'spike', d: 'M120,80 L115,55 L130,72 L140,48 L148,68 L160,50 L165,75 Z', label: '등뼈' },
+                ]
+            },
+            {
+                name: '🐊', viewBox: '0 0 320 240',
+                regions: [
+                    { id: 'body', d: 'M60,110 Q80,80 140,75 L220,80 Q260,90 270,110 Q275,140 260,155 L200,165 Q140,170 80,160 Q55,145 60,110 Z', label: '몸' },
+                    { id: 'head', d: 'M270,110 Q290,95 310,100 Q315,115 305,125 Q290,130 270,125 Z', label: '머리' },
+                    { id: 'snout', d: 'M305,125 L310,118 Q315,125 310,130 Z', label: '코' },
+                    { id: 'tail', d: 'M60,110 Q30,105 15,125 Q10,145 25,155 Q40,155 55,140 L80,160 Z', label: '꼬리' },
+                    { id: 'leg1', d: 'M120,165 L110,200 L135,205 L140,170 Z', label: '앞다리' },
+                    { id: 'leg2', d: 'M210,162 L205,198 L230,202 L230,165 Z', label: '뒷다리' },
+                    { id: 'scale1', d: 'M140,95 Q150,85 160,95 Q155,108 145,108 Q138,103 140,95 Z', label: '비늘1' },
+                    { id: 'scale2', d: 'M185,92 Q195,82 205,92 Q200,105 190,105 Q183,100 185,92 Z', label: '비늘2' },
+                ]
+            },
+            {
+                name: '🦎', viewBox: '0 0 300 260',
+                regions: [
+                    { id: 'body', d: 'M100,130 Q90,90 130,70 Q160,60 185,75 Q210,60 230,80 L240,110 Q245,145 225,170 L190,185 Q150,195 115,180 Q90,165 100,130 Z', label: '몸' },
+                    { id: 'head', d: 'M230,80 Q255,55 275,65 Q285,80 270,95 L250,100 L240,110 Q245,90 230,80 Z', label: '머리' },
+                    { id: 'tail', d: 'M100,130 Q65,135 40,160 Q25,185 15,210 Q20,225 35,220 Q50,200 75,175 L115,180 Z', label: '꼬리' },
+                    { id: 'leg1', d: 'M140,190 L130,225 L150,230 L155,195 Z', label: '앞다리' },
+                    { id: 'leg2', d: 'M200,182 L195,220 L215,225 L215,185 Z', label: '뒷다리' },
+                    { id: 'crest', d: 'M265,65 Q270,45 280,50 Q285,65 275,70 Z', label: '볏' },
+                ]
+            }
+        ];
+
+        const COLORS = [
+            '#e74c3c','#e67e22','#f1c40f','#2ecc71','#1abc9c',
+            '#3498db','#9b59b6','#e91e8c','#795548','#607d8b',
+            '#ff6b9d','#00bcd4','#8bc34a','#ff9800','#ffffff'
+        ];
+
+        let currentColor = COLORS[0];
+        let currentDino = 0;
+        let regionColors = {};
+
+        function initPalette() {
+            const pal = document.getElementById('palette');
+            pal.innerHTML = '';
+            COLORS.forEach((c, i) => {
+                const dot = document.createElement('div');
+                dot.className = 'color-dot' + (i === 0 ? ' active' : '');
+                dot.style.background = c;
+                if (c === '#ffffff') dot.style.border = '3px solid #ccc';
+                dot.onclick = () => {
+                    document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+                    dot.classList.add('active');
+                    currentColor = c;
+                };
+                pal.appendChild(dot);
+            });
+        }
+
+        function initDinoSelector() {
+            const sel = document.getElementById('dino-selector');
+            sel.innerHTML = '';
+            DINOS.forEach((d, i) => {
+                const thumb = document.createElement('div');
+                thumb.className = 'dino-thumb' + (i === 0 ? ' active' : '');
+                thumb.textContent = d.name;
+                thumb.onclick = () => {
+                    currentDino = i;
+                    document.querySelectorAll('.dino-thumb').forEach(t => t.classList.remove('active'));
+                    thumb.classList.add('active');
+                    renderDino();
+                };
+                sel.appendChild(thumb);
+            });
+        }
+
+        function renderDino() {
+            const area = document.getElementById('canvas-area');
+            const w = Math.min(360, window.innerWidth - 24);
+            const dino = DINOS[currentDino];
+            const key = currentDino;
+
+            if (!regionColors[key]) regionColors[key] = {};
+
+            let svg = `<svg viewBox="${dino.viewBox}" width="${w}" height="${w * 0.8}" xmlns="http://www.w3.org/2000/svg">`;
+            dino.regions.forEach(r => {
+                const fill = regionColors[key][r.id] || '#f5f5f5';
+                svg += `<path d="${r.d}" fill="${fill}" stroke="#555" stroke-width="2.5" stroke-linejoin="round" data-region="${r.id}" style="cursor:pointer;" />`;
+            });
+            // Eye
+            if (currentDino <= 1) {
+                svg += `<circle cx="265" cy="70" r="5" fill="#333" />`;
+                svg += `<circle cx="263" cy="68" r="2" fill="white" />`;
+            } else if (currentDino === 2) {
+                svg += `<circle cx="295" cy="108" r="4" fill="#333" />`;
+                svg += `<circle cx="293" cy="106" r="1.5" fill="white" />`;
+            } else {
+                svg += `<circle cx="268" cy="72" r="4.5" fill="#333" />`;
+                svg += `<circle cx="266" cy="70" r="1.5" fill="white" />`;
+            }
+            svg += `</svg>`;
+            area.innerHTML = svg;
+
+            // Click handlers
+            area.querySelectorAll('path[data-region]').forEach(path => {
+                const handler = (e) => {
+                    e.preventDefault();
+                    const rid = path.getAttribute('data-region');
+                    regionColors[key][rid] = currentColor;
+                    path.setAttribute('fill', currentColor);
+                    playColorSound();
+                    colorCount++;
+                    if (colorCount % 4 === 0) showEncourage();
+                };
+                path.addEventListener('click', handler);
+                path.addEventListener('touchstart', handler, { passive: false });
+            });
+        }
+
+        function resetColoring() {
+            regionColors[currentDino] = {};
+            renderDino();
+        }
+
+        document.body.addEventListener('touchmove', (e) => {
+            if (e.target.closest('.canvas-area')) e.preventDefault();
+        }, { passive: false });
+
+        initPalette();
+        initDinoSelector();
+        renderDino();
+    </script>
+</body>
+</html>

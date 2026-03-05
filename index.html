@@ -84,6 +84,52 @@
             border: 4px solid #e07040;
         }
 
+        .btn-memory {
+            background: linear-gradient(135deg, #b19cd9 0%, #9b7fc9 100%);
+            border: 4px solid #8b6fb9;
+        }
+
+        .btn-dino {
+            background: linear-gradient(135deg, #77dd77 0%, #5ec75e 100%);
+            border: 4px solid #4eb74e;
+        }
+
+        .btn-puzzle {
+            background: linear-gradient(135deg, #fdfd96 0%, #e8e86e 100%);
+            border: 4px solid #d0d050;
+            color: #666;
+        }
+
+        .btn-color {
+            background: linear-gradient(135deg, #ff9aa2 0%, #ff7b85 100%);
+            border: 4px solid #e06070;
+        }
+
+        .btn-coloring {
+            background: linear-gradient(135deg, #f0c27f 0%, #e0a050 100%);
+            border: 4px solid #c89040;
+        }
+
+        .btn-draw {
+            background: linear-gradient(135deg, #a8e6cf 0%, #88d8b0 100%);
+            border: 4px solid #68c890;
+        }
+
+        .btn-dot {
+            background: linear-gradient(135deg, #c3bef7 0%, #a8a0e8 100%);
+            border: 4px solid #9088d8;
+        }
+
+        .btn-balloon {
+            background: linear-gradient(135deg, #ffcccc 0%, #ff9999 100%);
+            border: 4px solid #e88080;
+        }
+
+        .btn-spot {
+            background: linear-gradient(135deg, #b8d8f8 0%, #90c0e8 100%);
+            border: 4px solid #78a8d0;
+        }
+
         #game-screen {
             display: none;
             flex-direction: column;
@@ -119,7 +165,7 @@
         .score-display {
             font-size: 32px;
             color: #ff6b9d;
-            margin: 10px 0;
+            margin: 8px 0;
         }
 
         .timer-bar {
@@ -546,7 +592,7 @@
         .touch-controls {
             display: flex;
             gap: 12px;
-            margin-top: 20px;
+            margin-top: 15px;
             justify-content: center;
             flex-wrap: wrap;
         }
@@ -683,132 +729,216 @@
             touch-action: manipulation;
         }
 
+        /* ============ Help Button & Overlay ============ */
+        .title-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .help-btn {
+            border-radius: 12px;
+            border: 3px solid #ff6b9d;
+            background: white;
+            color: #ff6b9d;
+            font-family: 'Nanum Pen Script', cursive;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 4px 12px;
+            flex-shrink: 0;
+        }
+
+        .help-btn:hover {
+            background: #ff6b9d;
+            color: white;
+        }
+
+        .help-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 150;
+        }
+
+        .help-overlay.show { display: flex; }
+
+        .help-box {
+            background: white;
+            border-radius: 20px;
+            padding: 28px 24px;
+            max-width: 320px;
+            width: 90%;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+            text-align: left;
+        }
+
+        .help-box h3 {
+            font-size: 28px;
+            color: #ff6b9d;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .help-box p {
+            font-size: 22px;
+            color: #555;
+            line-height: 1.5;
+            margin: 6px 0;
+        }
+
+        .help-close {
+            display: block;
+            margin: 16px auto 0;
+            padding: 10px 32px;
+            border: none;
+            border-radius: 12px;
+            background: #ff6b9d;
+            color: white;
+            font-family: 'Nanum Pen Script', cursive;
+            font-size: 22px;
+            cursor: pointer;
+        }
+
         /* ============ Mobile Responsive (Galaxy S25: viewport ~393x852) ============ */
         @media (max-width: 600px) {
             body {
-                padding: 8px;
+                padding: 4px;
             }
 
             h1 {
-                font-size: 36px;
-                margin-bottom: 5px;
+                font-size: 32px;
+                margin-bottom: 2px;
             }
 
             .subtitle {
-                font-size: 18px;
-                margin-bottom: 12px;
+                font-size: 16px;
+                margin-bottom: 8px;
             }
 
             .game-container {
-                gap: 16px;
+                gap: 12px;
             }
 
             .game-button {
-                width: 170px;
-                height: 110px;
-                font-size: 28px;
-                border-radius: 18px;
-                gap: 6px;
+                width: 160px;
+                height: 95px;
+                font-size: 24px;
+                border-radius: 16px;
+                gap: 4px;
             }
 
             .game-button .desc {
-                font-size: 16px;
+                font-size: 14px;
             }
 
             .back-btn {
-                padding: 8px 14px;
-                font-size: 16px;
-                top: 10px;
-                left: 10px;
+                padding: 6px 12px;
+                font-size: 14px;
+                top: 6px;
+                left: 6px;
                 z-index: 50;
             }
 
             .score-display {
-                font-size: 26px;
-                margin: 6px 0;
+                font-size: 22px;
+                margin: 2px 0;
             }
 
-            /* Anipang Mobile - Galaxy S25 optimized (393px wide) */
+            /* Anipang Mobile - fit 393px viewport height */
             .timer-bar {
-                max-width: 375px;
-                height: 16px;
+                max-width: 340px;
+                height: 12px;
+                margin-bottom: 4px;
             }
 
             #anipang-board {
-                grid-template-columns: repeat(7, 50px);
-                grid-template-rows: repeat(7, 50px);
-                gap: 3px;
-                padding: 6px;
+                grid-template-columns: repeat(7, 46px);
+                grid-template-rows: repeat(7, 46px);
+                gap: 2px;
+                padding: 4px;
                 border-width: 3px;
             }
 
             .anipang-cell {
-                width: 50px;
-                height: 50px;
-                font-size: 28px;
-                border-radius: 10px;
+                width: 46px;
+                height: 46px;
+                font-size: 26px;
+                border-radius: 8px;
             }
 
             .anipang-encourage {
-                font-size: 28px;
-                min-height: 35px;
-                margin: 4px 0;
+                font-size: 24px;
+                min-height: 28px;
+                margin: 2px 0;
             }
 
             .anipang-controls {
-                gap: 8px;
-                margin-top: 6px;
+                gap: 6px;
+                margin-top: 4px;
             }
 
             .hint-btn {
-                padding: 8px 18px;
-                font-size: 18px;
-            }
-
-            .mode-btn, .diff-btn {
-                padding: 8px 14px;
+                padding: 6px 14px;
                 font-size: 16px;
             }
 
+            .mode-btn, .diff-btn {
+                padding: 5px 10px;
+                font-size: 14px;
+            }
+
+            .mode-selector, .difficulty-selector {
+                margin: 3px 0;
+                gap: 6px;
+            }
+
             .sticker-bar {
-                padding: 6px 12px;
-                gap: 4px;
+                padding: 4px 10px;
+                gap: 3px;
+                min-height: 32px;
+                margin: 3px 0;
             }
 
             .sticker {
-                font-size: 20px;
+                font-size: 18px;
             }
 
             .sticker-label {
-                font-size: 15px;
+                font-size: 14px;
             }
 
-            /* HOtris Mobile - Galaxy S25 optimized */
+            /* HOtris Mobile - fit 393x852 viewport */
             #hotris-container {
                 flex-direction: column;
                 align-items: center;
-                gap: 12px;
+                gap: 6px;
             }
 
             #tetris-board {
-                grid-template-columns: repeat(8, 44px);
-                grid-template-rows: repeat(14, 40px);
+                grid-template-columns: repeat(8, 38px);
+                grid-template-rows: repeat(14, 32px);
                 gap: 1px;
-                padding: 6px;
+                padding: 4px;
                 border-width: 3px;
             }
 
             .tetris-cell {
-                width: 44px;
-                height: 40px;
-                font-size: 20px;
-                border-radius: 5px;
+                width: 38px;
+                height: 32px;
+                font-size: 16px;
+                border-radius: 4px;
             }
 
             .side-panel {
                 flex-direction: row;
                 min-width: auto;
-                gap: 15px;
+                gap: 12px;
                 justify-content: center;
             }
 
@@ -817,46 +947,51 @@
             }
 
             .next-preview {
-                padding: 10px;
+                padding: 8px;
             }
 
             .next-preview h3 {
-                font-size: 20px;
-                margin-bottom: 6px;
+                font-size: 18px;
+                margin-bottom: 4px;
             }
 
             #next-piece {
-                grid-template-columns: repeat(4, 24px);
-                grid-template-rows: repeat(4, 24px);
-                padding: 4px;
+                grid-template-columns: repeat(4, 20px);
+                grid-template-rows: repeat(4, 20px);
+                padding: 3px;
             }
 
             .next-cell {
-                width: 24px;
-                height: 24px;
-                font-size: 13px;
+                width: 20px;
+                height: 20px;
+                font-size: 11px;
             }
 
             .touch-controls {
-                gap: 8px;
-                margin-top: 10px;
+                gap: 6px;
+                margin-top: 6px;
             }
 
             .touch-btn {
-                width: 66px;
-                height: 66px;
-                font-size: 28px;
+                width: 56px;
+                height: 56px;
+                font-size: 24px;
             }
 
             .encourage-text {
-                font-size: 28px;
-                min-height: 35px;
+                font-size: 24px;
+                min-height: 28px;
             }
 
             .start-btn {
-                font-size: 24px;
-                padding: 14px 36px;
-                margin-top: 12px;
+                font-size: 22px;
+                padding: 10px 30px;
+                margin-top: 8px;
+            }
+
+            .help-btn {
+                font-size: 16px;
+                padding: 2px 10px;
             }
 
             /* Modal Mobile */
@@ -900,39 +1035,39 @@
         /* Extra small screens (< 380px) */
         @media (max-width: 380px) {
             #anipang-board {
-                grid-template-columns: repeat(7, 44px);
-                grid-template-rows: repeat(7, 44px);
+                grid-template-columns: repeat(7, 40px);
+                grid-template-rows: repeat(7, 40px);
                 gap: 2px;
-                padding: 5px;
+                padding: 3px;
             }
 
             .anipang-cell {
-                width: 44px;
-                height: 44px;
-                font-size: 24px;
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
             }
 
             #tetris-board {
-                grid-template-columns: repeat(8, 38px);
-                grid-template-rows: repeat(14, 36px);
+                grid-template-columns: repeat(8, 32px);
+                grid-template-rows: repeat(14, 26px);
             }
 
             .tetris-cell {
-                width: 38px;
-                height: 36px;
-                font-size: 18px;
+                width: 32px;
+                height: 26px;
+                font-size: 13px;
             }
 
             .touch-btn {
-                width: 58px;
-                height: 58px;
-                font-size: 24px;
+                width: 50px;
+                height: 50px;
+                font-size: 22px;
             }
 
             .game-button {
-                width: 150px;
-                height: 95px;
-                font-size: 24px;
+                width: 145px;
+                height: 85px;
+                font-size: 22px;
             }
         }
     </style>
@@ -950,6 +1085,42 @@
             🧱 HOtris
             <span class="desc">테트리스 게임</span>
         </button>
+        <button class="game-button btn-memory" onclick="window.location.href='memory-match.html'">
+            🃏 짝맞추기
+            <span class="desc">카드 기억력 게임</span>
+        </button>
+        <button class="game-button btn-dino" onclick="window.location.href='dino-catch.html'">
+            🦕 공룡 잡기
+            <span class="desc">반응속도 게임</span>
+        </button>
+        <button class="game-button btn-puzzle" onclick="window.location.href='picture-puzzle.html'">
+            🧩 그림 퍼즐
+            <span class="desc">슬라이드 퍼즐</span>
+        </button>
+        <button class="game-button btn-color" onclick="window.location.href='color-memory.html'">
+            🎵 색깔 기억
+            <span class="desc">사이먼 세즈 게임</span>
+        </button>
+        <button class="game-button btn-coloring" onclick="window.location.href='dino-coloring.html'">
+            🎨 공룡 색칠
+            <span class="desc">공룡 색칠하기</span>
+        </button>
+        <button class="game-button btn-draw" onclick="window.location.href='free-draw.html'">
+            🖌️ 자유 그림판
+            <span class="desc">그림 그리기</span>
+        </button>
+        <button class="game-button btn-dot" onclick="window.location.href='dot-connect.html'">
+            🔢 숫자 잇기
+            <span class="desc">점 이어 그리기</span>
+        </button>
+        <button class="game-button btn-balloon" onclick="window.location.href='balloon-pop.html'">
+            🫧 풍선 터뜨리기
+            <span class="desc">풍선 팡팡</span>
+        </button>
+        <button class="game-button btn-spot" onclick="window.location.href='spot-same.html'">
+            🔍 같은 그림 찾기
+            <span class="desc">똑같은 걸 찾아요</span>
+        </button>
     </div>
 
     <div id="game-screen">
@@ -957,7 +1128,10 @@
 
         <!-- Anipang Game -->
         <div id="anipang-game">
-            <div class="score-display">점수: <span id="anipang-score">0</span></div>
+            <div class="title-row">
+                <div class="score-display">점수: <span id="anipang-score">0</span></div>
+                <button class="help-btn" onclick="document.getElementById('anipang-help').classList.add('show')">사용법</button>
+            </div>
 
             <!-- Sticker Bar -->
             <div class="sticker-bar" id="sticker-bar">
@@ -992,23 +1166,13 @@
 
         <!-- HOtris Game -->
         <div id="hotris-game">
-            <div class="score-display">점수: <span id="tetris-score">0</span></div>
+            <div class="title-row">
+                <div class="score-display">점수: <span id="tetris-score">0</span></div>
+                <button class="help-btn" onclick="document.getElementById('hotris-help').classList.add('show')">사용법</button>
+            </div>
             <div id="encourage-text" class="encourage-text"></div>
             <div id="hotris-container">
                 <div id="tetris-board"></div>
-                <div class="side-panel">
-                    <div class="next-preview">
-                        <h3>다음 블록</h3>
-                        <div id="next-piece"></div>
-                    </div>
-                    <div class="controls-info">
-                        <h3>조작법</h3>
-                        <p><span class="key">←</span><span class="key">→</span> 이동</p>
-                        <p><span class="key">↓</span> 빠르게</p>
-                        <p><span class="key">↑</span> 회전</p>
-                        <p><span class="key">스페이스</span> 떨어뜨리기</p>
-                    </div>
-                </div>
             </div>
             <div class="touch-controls">
                 <button class="touch-btn left" id="btn-left">⬅️</button>
@@ -1040,6 +1204,32 @@
             <p>같은 공룡 3개를<br>나란히 맞추면 돼요!</p>
             <p>💡 모르겠으면<br>힌트 버튼을 눌러봐!</p>
             <button class="tutorial-close-btn" onclick="closeTutorial()">알겠어요! 👍</button>
+        </div>
+    </div>
+
+    <!-- HOpang Help Overlay -->
+    <div class="help-overlay" id="anipang-help" onclick="if(event.target===this)this.classList.remove('show')">
+        <div class="help-box">
+            <h3>🦕 HOpang 규칙</h3>
+            <p>1. 공룡을 터치하고 옆으로 밀어요</p>
+            <p>2. 같은 공룡 3개를 나란히 맞추면 성공!</p>
+            <p>3. 시간 안에 많이 맞출수록 높은 점수!</p>
+            <p>4. 연습 모드에서는 시간제한 없이 연습!</p>
+            <p>💡 모르겠으면 힌트 버튼을 눌러봐!</p>
+            <button class="help-close" onclick="document.getElementById('anipang-help').classList.remove('show')">알겠어요!</button>
+        </div>
+    </div>
+
+    <!-- HOtris Help Overlay -->
+    <div class="help-overlay" id="hotris-help" onclick="if(event.target===this)this.classList.remove('show')">
+        <div class="help-box">
+            <h3>🧱 HOtris 규칙</h3>
+            <p>1. 떨어지는 블록을 좌우로 움직여요</p>
+            <p>2. 🔄 버튼으로 블록을 회전해요</p>
+            <p>3. 한 줄을 꽉 채우면 줄이 사라져요!</p>
+            <p>4. ⏬ 버튼으로 빠르게 내릴 수 있어요</p>
+            <p>💡 많은 줄을 한번에 없앨수록 높은 점수!</p>
+            <button class="help-close" onclick="document.getElementById('hotris-help').classList.remove('show')">알겠어요!</button>
         </div>
     </div>
 
@@ -1655,20 +1845,7 @@
         }
 
         function updateNextPieceDisplay() {
-            const next = document.getElementById('next-piece');
-            next.innerHTML = '';
-
-            for (let r = 0; r < 4; r++) {
-                for (let c = 0; c < 4; c++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'next-cell';
-                    if (nextPiece[r] && nextPiece[r][c]) {
-                        cell.classList.add('filled', `color-${nextColor}`);
-                        cell.textContent = BLOCK_EMOJIS[nextColor];
-                    }
-                    next.appendChild(cell);
-                }
-            }
+            // Next piece preview removed for mobile fit
         }
 
         function checkTetrisCollision(rowOffset, row, col, piece) {
@@ -1850,6 +2027,8 @@
         function startAnipang() {
             document.getElementById('menu-screen').style.display = 'none';
             document.getElementById('hint-text').style.display = 'none';
+            document.querySelector('h1').style.display = 'none';
+            document.querySelector('.subtitle').style.display = 'none';
             document.getElementById('game-screen').style.display = 'flex';
             document.getElementById('anipang-game').style.display = 'flex';
             document.getElementById('hotris-game').style.display = 'none';
@@ -1890,6 +2069,8 @@
         function startHOtris() {
             document.getElementById('menu-screen').style.display = 'none';
             document.getElementById('hint-text').style.display = 'none';
+            document.querySelector('h1').style.display = 'none';
+            document.querySelector('.subtitle').style.display = 'none';
             document.getElementById('game-screen').style.display = 'flex';
             document.getElementById('anipang-game').style.display = 'none';
             document.getElementById('hotris-game').style.display = 'flex';
@@ -1966,6 +2147,8 @@
             document.getElementById('game-screen').style.display = 'none';
             document.getElementById('menu-screen').style.display = 'flex';
             document.getElementById('hint-text').style.display = 'block';
+            document.querySelector('h1').style.display = '';
+            document.querySelector('.subtitle').style.display = '';
             document.getElementById('anipang-game').style.display = 'none';
             document.getElementById('hotris-game').style.display = 'none';
         }

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>HO_GAME - 같은 그림 찾기</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Nanum Pen Script', cursive;
+            background: linear-gradient(135deg, #fff8f0 0%, #f0f8ff 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 4px;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .back-btn {
+            position: fixed; top: 6px; left: 6px;
+            background: white; border: 3px solid #ddd; border-radius: 12px;
+            padding: 6px 12px; font-family: 'Nanum Pen Script', cursive;
+            font-size: 16px; cursor: pointer; z-index: 50;
+            text-decoration: none; color: black;
+        }
+        .title-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
+        h1 { font-size: 28px; color: #5588cc; text-shadow: 2px 2px 0 #ffe66d; margin-bottom: 2px; }
+        .help-btn {
+            border-radius: 12px; border: 3px solid #90c0e8; background: white;
+            color: #5588cc; font-family: 'Nanum Pen Script', cursive;
+            font-size: 16px; cursor: pointer; padding: 2px 10px;
+        }
+        .help-btn:hover { background: #90c0e8; color: white; }
+        .help-overlay {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+            justify-content: center; align-items: center; z-index: 150;
+        }
+        .help-overlay.show { display: flex; }
+        .help-box {
+            background: white; border-radius: 20px; padding: 24px;
+            max-width: 320px; width: 90%; box-shadow: 0 16px 48px rgba(0,0,0,0.25); text-align: left;
+        }
+        .help-box h3 { font-size: 26px; color: #5588cc; margin-bottom: 10px; text-align: center; }
+        .help-box p { font-size: 20px; color: #555; line-height: 1.5; margin: 5px 0; }
+        .help-close {
+            display: block; margin: 14px auto 0; padding: 8px 28px; border: none;
+            border-radius: 12px; background: #5588cc; color: white;
+            font-family: 'Nanum Pen Script', cursive; font-size: 20px; cursor: pointer;
+        }
+
+        .top-bar {
+            display: flex; gap: 16px; align-items: center; margin: 4px 0;
+        }
+        .score-display { font-size: 24px; color: #5588cc; }
+        .round-display { font-size: 22px; color: #888; }
+
+        .status {
+            font-size: 24px; color: #888; min-height: 30px;
+            text-align: center; margin: 4px 0;
+        }
+
+        .sticker-bar {
+            display: flex; gap: 4px; padding: 4px 10px; background: white;
+            border-radius: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            border: 2px solid #d8e8f8; margin: 3px 0; min-height: 30px;
+            align-items: center; flex-wrap: wrap; justify-content: center;
+        }
+        .sticker { font-size: 18px; animation: stickerPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        @keyframes stickerPop {
+            0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+            70% { transform: scale(1.3) rotate(10deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        .sticker-label { font-size: 14px; color: #ccc; }
+
+        .encourage {
+            font-size: 28px; color: #5588cc; min-height: 32px;
+            text-align: center; margin: 4px 0;
+        }
+        .encourage.pop { animation: encouragePop 2s ease-out forwards; }
+        @keyframes encouragePop {
+            0% { opacity: 0; transform: scale(0.3); }
+            15% { opacity: 1; transform: scale(1.3); }
+            30% { transform: scale(1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; transform: scale(1) translateY(-10px); }
+        }
+
+        .board {
+            display: grid;
+            gap: 8px;
+            padding: 10px;
+            background: #f0f5ff;
+            border-radius: 16px;
+            border: 4px solid #c8d8f0;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+            margin: 6px 0;
+        }
+        .board-3 { grid-template-columns: repeat(3, 90px); }
+        .board-4 { grid-template-columns: repeat(4, 75px); }
+
+        .cell {
+            aspect-ratio: 1;
+            border-radius: 14px;
+            background: white;
+            border: 3px solid #d8e4f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 42px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .board-4 .cell { font-size: 34px; }
+
+        .cell:active { transform: scale(0.95); }
+        .cell.selected {
+            border-color: #5588cc;
+            background: #e8f0ff;
+            box-shadow: 0 0 0 3px rgba(85,136,204,0.3);
+        }
+        .cell.correct {
+            border-color: #4CAF50;
+            background: #e8ffe8;
+            animation: correctBounce 0.4s ease-out;
+        }
+        @keyframes correctBounce {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+        .cell.wrong {
+            border-color: #ff4444;
+            background: #ffe8e8;
+            animation: wrongShake 0.3s ease-out;
+        }
+        @keyframes wrongShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+
+        .heart-particle {
+            position: fixed; pointer-events: none; z-index: 200; font-size: 20px;
+            animation: heartBurst var(--duration, 1s) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        @keyframes heartBurst {
+            0% { opacity: 1; transform: translate(0, 0) scale(0.3) rotate(0deg); }
+            20% { opacity: 1; transform: translate(var(--tx20), var(--ty20)) scale(1.2) rotate(var(--rot)); }
+            60% { opacity: 1; transform: translate(var(--tx60), var(--ty60)) scale(1) rotate(var(--rot2)); }
+            100% { opacity: 0; transform: translate(var(--tx100), var(--ty100)) scale(0.5) rotate(var(--rot3)); }
+        }
+
+        @media (max-width: 380px) {
+            .board-3 { grid-template-columns: repeat(3, 80px); }
+            .board-4 { grid-template-columns: repeat(4, 65px); }
+            .cell { font-size: 36px; }
+            .board-4 .cell { font-size: 28px; }
+        }
+    </style>
+</head>
+<body>
+    <a class="back-btn" href="index.html">← 뒤로</a>
+    <div class="title-row">
+        <h1>🔍 같은 그림 찾기</h1>
+        <button class="help-btn" onclick="document.getElementById('help-overlay').classList.add('show')">사용법</button>
+    </div>
+
+    <div class="help-overlay" id="help-overlay" onclick="if(event.target===this)this.classList.remove('show')">
+        <div class="help-box">
+            <h3>🔍 같은 그림 찾기 규칙</h3>
+            <p>1. 여러 그림 중 똑같은 2개를 찾아요</p>
+            <p>2. 같은 그림 2개를 차례로 터치!</p>
+            <p>3. 맞추면 다음 문제가 나와요</p>
+            <p>4. 점점 어려워져요!</p>
+            <p>💡 비슷해 보여도 잘 봐야 해요!</p>
+            <button class="help-close" onclick="document.getElementById('help-overlay').classList.remove('show')">알겠어요!</button>
+        </div>
+    </div>
+
+    <div class="top-bar">
+        <div class="score-display">맞춘 수: <span id="score">0</span></div>
+        <div class="round-display">라운드 <span id="round">1</span></div>
+    </div>
+    <div class="sticker-bar" id="sticker-bar">
+        <span class="sticker-label" id="sticker-label">스티커를 모아봐요!</span>
+    </div>
+    <div class="status" id="status">똑같은 그림 2개를 찾아요!</div>
+    <div class="encourage" id="encourage"></div>
+    <div class="board board-3" id="board"></div>
+
+    <script>
+        let audioCtx = null;
+        function getAudioCtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+        function playTone(f, d, t, v) { try { const c = getAudioCtx(), o = c.createOscillator(), g = c.createGain(); o.type = t||'sine'; o.frequency.value = f; g.gain.value = v||0.15; g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+d); o.connect(g); g.connect(c.destination); o.start(c.currentTime); o.stop(c.currentTime+d); } catch(e){} }
+        function playCorrectSound() { playTone(523, 0.1, 'sine', 0.15); setTimeout(() => playTone(659, 0.1, 'sine', 0.15), 70); setTimeout(() => playTone(784, 0.12, 'sine', 0.15), 140); }
+        function playWrongSound() { playTone(300, 0.15, 'square', 0.06); setTimeout(() => playTone(250, 0.2, 'square', 0.06), 120); }
+        function playTapSound() { playTone(440, 0.05, 'sine', 0.1); }
+        function playStickerSound() { playTone(880, 0.08, 'sine', 0.12); setTimeout(() => playTone(1108, 0.08, 'sine', 0.12), 60); }
+
+        function spawnHeartExplosion(x, y, count) {
+            const hearts = ['❤️','💕','💗','💖','💓'];
+            for (let i = 0; i < (count||18); i++) {
+                const h = document.createElement('div'); h.className = 'heart-particle';
+                h.textContent = hearts[Math.floor(Math.random()*hearts.length)];
+                const angle = (Math.PI*2*i)/count+(Math.random()-0.5)*0.6;
+                const dist = 60+Math.random()*100;
+                const rot = (Math.random()-0.5)*60, dur = 0.7+Math.random()*0.6, sz = 14+Math.random()*14;
+                h.style.cssText = `left:${x}px;top:${y}px;font-size:${sz}px;--tx20:${Math.cos(angle)*dist*0.3}px;--ty20:${Math.sin(angle)*dist*0.3-20}px;--tx60:${Math.cos(angle)*dist*0.7}px;--ty60:${Math.sin(angle)*dist*0.7-10}px;--tx100:${Math.cos(angle)*dist}px;--ty100:${Math.sin(angle)*dist+30}px;--rot:${rot}deg;--rot2:${rot*1.5}deg;--rot3:${rot*2}deg;--duration:${dur}s;`;
+                document.body.appendChild(h); setTimeout(() => h.remove(), dur*1000+50);
+            }
+        }
+
+        const ENCOURAGE = ['현오~ 잘했어요!!!','현오~ 대단해요!!!','현오~ 눈이 좋다!!!','현오~ 멋져요!!!'];
+        function showEncourage() {
+            const el = document.getElementById('encourage');
+            el.textContent = ENCOURAGE[Math.floor(Math.random()*ENCOURAGE.length)];
+            el.className = 'encourage'; void el.offsetHeight; el.className = 'encourage pop';
+            const r = el.getBoundingClientRect();
+            spawnHeartExplosion(r.left+r.width/2, r.top+r.height/2, 18);
+        }
+
+        // Sticker
+        const STICKER_MILESTONES = [2, 5, 8, 12, 18, 25];
+        const STICKER_ICONS = ['⭐','🌟','🏅','🎖️','🏆','👑'];
+        let earnedStickers = [], lastStickerIndex = -1;
+        function checkStickerMilestone(s) {
+            for (let i = lastStickerIndex+1; i < STICKER_MILESTONES.length; i++) {
+                if (s >= STICKER_MILESTONES[i]) {
+                    lastStickerIndex = i; earnedStickers.push(STICKER_ICONS[i]);
+                    const bar = document.getElementById('sticker-bar');
+                    const lbl = document.getElementById('sticker-label'); if (lbl) lbl.remove();
+                    const sp = document.createElement('span'); sp.className = 'sticker'; sp.textContent = STICKER_ICONS[i]; bar.appendChild(sp);
+                    playStickerSound();
+                    const r = bar.getBoundingClientRect();
+                    spawnHeartExplosion(r.left+r.width/2, r.top+r.height/2, 12);
+                } else break;
+            }
+        }
+
+        // Emoji groups - similar looking emojis in each group
+        const EMOJI_GROUPS = [
+            ['🦕','🦖','🦎','🐊','🐉','🐲'],
+            ['🐶','🐕','🐩','🐺','🦊','🐱'],
+            ['🚗','🚕','🚙','🏎️','🚓','🚑'],
+            ['🌸','🌺','🌷','🌹','💐','🌻'],
+            ['⚽','🏀','🏈','⚾','🎾','🏐'],
+            ['🍎','🍊','🍋','🍐','🍑','🍓'],
+            ['🤖','👾','🎮','🕹️','💻','📱'],
+            ['🦁','🐯','🐻','🐼','🐨','🐵'],
+        ];
+
+        let round = 1;
+        let score = 0;
+        let selected = [];
+        let answerEmoji = '';
+        let locked = false;
+        let gridData = [];
+
+        function getGridSize() {
+            if (round <= 3) return 3; // 3x3 = 9
+            return 4; // 4x4 = 16
+        }
+
+        function generateRound() {
+            const size = getGridSize();
+            const total = size * size;
+            const board = document.getElementById('board');
+            board.className = `board board-${size}`;
+
+            // Pick a group
+            const group = EMOJI_GROUPS[Math.floor(Math.random() * EMOJI_GROUPS.length)];
+
+            // Pick the answer emoji (will appear exactly twice)
+            answerEmoji = group[Math.floor(Math.random() * group.length)];
+
+            // Fill rest with unique different emojis from group
+            const others = group.filter(e => e !== answerEmoji);
+            const fillers = [];
+
+            // Need total - 2 fillers (all different)
+            const need = total - 2;
+            // Use emojis from group first, then from other groups
+            const allEmojis = [];
+            EMOJI_GROUPS.forEach(g => g.forEach(e => { if (e !== answerEmoji && !allEmojis.includes(e)) allEmojis.push(e); }));
+
+            for (let i = 0; i < need; i++) {
+                fillers.push(allEmojis[i % allEmojis.length]);
+            }
+
+            // Combine: 2 answers + fillers
+            gridData = [answerEmoji, answerEmoji, ...fillers.slice(0, need)];
+
+            // Shuffle
+            for (let i = gridData.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [gridData[i], gridData[j]] = [gridData[j], gridData[i]];
+            }
+
+            selected = [];
+            locked = false;
+            renderBoard();
+        }
+
+        function renderBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            gridData.forEach((emoji, i) => {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.textContent = emoji;
+                cell.dataset.index = i;
+                const handler = (e) => {
+                    e.preventDefault();
+                    tapCell(i, cell);
+                };
+                cell.addEventListener('click', handler);
+                cell.addEventListener('touchstart', handler, { passive: false });
+                board.appendChild(cell);
+            });
+        }
+
+        function tapCell(index, cell) {
+            if (locked) return;
+            if (selected.includes(index)) return;
+
+            playTapSound();
+            selected.push(index);
+            cell.classList.add('selected');
+
+            if (selected.length === 2) {
+                locked = true;
+                const e1 = gridData[selected[0]];
+                const e2 = gridData[selected[1]];
+
+                if (e1 === e2 && e1 === answerEmoji) {
+                    // Correct!
+                    setTimeout(() => {
+                        document.querySelectorAll('.cell').forEach((c, i) => {
+                            if (selected.includes(i)) c.classList.add('correct');
+                        });
+                        playCorrectSound();
+                        score++;
+                        round++;
+                        document.getElementById('score').textContent = score;
+                        document.getElementById('round').textContent = round;
+                        checkStickerMilestone(score);
+                        showEncourage();
+
+                        setTimeout(() => generateRound(), 1200);
+                    }, 300);
+                } else {
+                    // Wrong
+                    setTimeout(() => {
+                        document.querySelectorAll('.cell').forEach((c, i) => {
+                            if (selected.includes(i)) c.classList.add('wrong');
+                        });
+                        playWrongSound();
+                        document.getElementById('status').textContent = '다시 찾아봐요!';
+
+                        setTimeout(() => {
+                            document.querySelectorAll('.cell').forEach(c => {
+                                c.classList.remove('selected', 'wrong');
+                            });
+                            selected = [];
+                            locked = false;
+                            document.getElementById('status').textContent = '똑같은 그림 2개를 찾아요!';
+                        }, 800);
+                    }, 300);
+                }
+            }
+        }
+
+        document.body.addEventListener('touchmove', (e) => {
+            if (e.target.closest('.board')) e.preventDefault();
+        }, { passive: false });
+
+        generateRound();
+    </script>
+</body>
+</html>
