@@ -182,43 +182,49 @@
             100% { transform: scale(1) rotate(0deg); opacity: 1; }
         }
         .sticker-label { font-size: 14px; color: #ccc; }
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            position: relative;
+        }
         .profile-badge {
-            position: fixed;
-            top: 10px;
-            right: 10px;
+            position: absolute;
+            right: 8px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            z-index: 100;
             background: rgba(255,255,255,0.85);
             border-radius: 16px;
-            padding: 8px 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 4px 8px;
         }
         .profile-badge img {
-            width: 50px;
-            height: 50px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
-            border: 3px solid #ffe66d;
+            border: 2px solid #ffe66d;
             object-fit: cover;
         }
         .profile-badge .name {
             font-family: 'Nanum Pen Script', cursive;
-            font-size: 16px;
+            font-size: 13px;
             color: #ff6b9d;
-            margin-top: 2px;
+            margin-top: 1px;
         }
     </style>
 </head>
 <body>
-    <div class="profile-badge">
-        <img src="assets/hyuno.png" alt="현오">
-        <span class="name">현오~^^</span>
-    </div>
     <a class="back-btn" href="index.html">← 뒤로</a>
-    <div class="title-row">
-        <h1>🫧 풍선 터뜨리기</h1>
-        <button class="help-btn" onclick="document.getElementById('help-overlay').classList.add('show')">사용법</button>
+    <div class="page-header">
+        <div class="title-row">
+            <h1>🫧 풍선 터뜨리기</h1>
+            <button class="help-btn" onclick="document.getElementById('help-overlay').classList.add('show')">사용법</button>
+        </div>
+        <div class="profile-badge">
+            <img src="assets/hyuno.png" alt="현오">
+            <span class="name">현오~^^</span>
+        </div>
     </div>
 
     <div class="help-overlay" id="help-overlay" onclick="if(event.target===this)this.classList.remove('show')">
