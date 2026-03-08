@@ -171,24 +171,24 @@
             justify-content: center;
             align-items: center;
             flex-wrap: wrap;
-            max-width: 500px;
+            max-width: 680px;
         }
         .stroke-guide canvas {
-            border-radius: 8px;
+            border-radius: 10px;
             border: 2px solid #eee;
             background: #fafafa;
             flex-shrink: 0;
         }
         .stroke-guide .jamo-separator {
             width: 3px;
-            height: 50px;
+            height: 70px;
             background: #e0e0e0;
             border-radius: 2px;
             margin: 0 4px;
             flex-shrink: 0;
         }
         .stroke-guide-label {
-            font-size: 16px;
+            font-size: 18px;
             color: #999;
             text-align: center;
             margin: 0;
@@ -280,7 +280,7 @@
             .big-emoji { font-size: 130px; }
             .big-emoji-box { min-width: 180px; min-height: 200px; padding: 20px; }
             .big-emoji-label { font-size: 26px; }
-            .stroke-guide { max-width: 600px; }
+            .stroke-guide { max-width: 780px; }
             .stroke-guide canvas { border-radius: 10px; }
             .tool-btn { padding: 10px 24px; font-size: 24px; }
             .pen-dot { width: 34px; height: 34px; }
@@ -886,7 +886,7 @@
         function drawStrokeGuide(word) {
             const guide = document.getElementById('stroke-guide');
             guide.innerHTML = '';
-            const boxSize = 70;
+            const boxSize = 100;
 
             for (let ci = 0; ci < word.length; ci++) {
                 const d = decomposeHangul(word[ci]);
@@ -911,7 +911,7 @@
                     const color = JAMO_COLORS[p.type];
 
                     // Draw jamo character lightly
-                    ctx.font = `bold 38px 'Jua', sans-serif`;
+                    ctx.font = `bold 54px 'Jua', sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillStyle = 'rgba(0,0,0,0.08)';
@@ -926,7 +926,7 @@
                             ctx.beginPath();
                             ctx.arc(boxSize/2, boxSize/2, boxSize*0.28, 0, Math.PI*1.8);
                             ctx.strokeStyle = color;
-                            ctx.lineWidth = 3.5;
+                            ctx.lineWidth = 4.5;
                             ctx.stroke();
                             // Arrow at end
                             const endAngle = Math.PI*1.8;
@@ -936,16 +936,16 @@
                             drawMiniArrowhead(ctx, boxSize/2 + Math.cos(endAngle-0.3)*r, boxSize/2 + Math.sin(endAngle-0.3)*r, ex, ey, color, 9);
                             // Number
                             ctx.fillStyle = color;
-                            ctx.font = 'bold 16px sans-serif';
+                            ctx.font = 'bold 20px sans-serif';
                             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                            ctx.fillText('①', boxSize/2, boxSize*0.15);
+                            ctx.fillText('①', boxSize/2, boxSize*0.12);
                         } else if (p.jamo === 'ㅎ') {
                             // dot, line, circle
                             // Dot
                             ctx.beginPath();
                             ctx.arc(boxSize*0.5, boxSize*0.12, 5, 0, Math.PI*2);
                             ctx.fillStyle = color; ctx.fill();
-                            ctx.fillStyle = color; ctx.font = 'bold 14px sans-serif';
+                            ctx.fillStyle = color; ctx.font = 'bold 18px sans-serif';
                             ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
                             ctx.fillText('①', boxSize*0.6, boxSize*0.12);
                             // Line
@@ -953,8 +953,8 @@
                             // Circle
                             ctx.beginPath();
                             ctx.arc(boxSize/2, boxSize*0.72, boxSize*0.18, 0, Math.PI*1.8);
-                            ctx.strokeStyle = color; ctx.lineWidth = 3.5; ctx.stroke();
-                            ctx.fillStyle = color; ctx.font = 'bold 14px sans-serif';
+                            ctx.strokeStyle = color; ctx.lineWidth = 4.5; ctx.stroke();
+                            ctx.fillStyle = color; ctx.font = 'bold 18px sans-serif';
                             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                             ctx.fillText('③', boxSize*0.5, boxSize*0.56);
                         } else if (p.jamo === 'ㅊ') {
@@ -962,7 +962,7 @@
                             ctx.beginPath();
                             ctx.arc(boxSize*0.5, boxSize*0.12, 5, 0, Math.PI*2);
                             ctx.fillStyle = color; ctx.fill();
-                            ctx.fillStyle = color; ctx.font = 'bold 14px sans-serif';
+                            ctx.fillStyle = color; ctx.font = 'bold 18px sans-serif';
                             ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
                             ctx.fillText('①', boxSize*0.6, boxSize*0.12);
                             for (let si = 1; si < strokes.length; si++) {
@@ -989,21 +989,21 @@
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
             ctx.strokeStyle = color;
-            ctx.lineWidth = 3.5;
+            ctx.lineWidth = 4.5;
             ctx.lineCap = 'round';
             ctx.stroke();
 
             // Arrowhead
-            drawMiniArrowhead(ctx, x1, y1, x2, y2, color, 9);
+            drawMiniArrowhead(ctx, x1, y1, x2, y2, color, 12);
 
             // Number at start
             ctx.fillStyle = color;
-            ctx.font = 'bold 14px sans-serif';
+            ctx.font = 'bold 18px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             const dx = x2-x1, dy = y2-y1;
             const len = Math.sqrt(dx*dx+dy*dy) || 1;
-            const ox = -dy/len * 11, oy = dx/len * 11;
+            const ox = -dy/len * 14, oy = dx/len * 14;
             ctx.fillText(numChar, x1 + ox, y1 + oy);
         }
 
@@ -1301,9 +1301,13 @@
                 setTimeout(() => {
                     // 칭찬 메시지 표시
                     showEncourage();
-                    // 칭찬 메시지를 음성으로 읽기
-                    const msg = document.getElementById('encourage').textContent;
-                    speakWord(msg);
+                    // 단어를 먼저 읽고, 이어서 칭찬 메시지 읽기
+                    const currentWord = filteredWords[wordIndex];
+                    speakWord(currentWord);
+                    setTimeout(() => {
+                        const msg = document.getElementById('encourage').textContent;
+                        speakWord(msg);
+                    }, 1200);
                     // 팡! 대형 폭죽 효과
                     const cx = window.innerWidth / 2;
                     const cy = window.innerHeight / 2;
