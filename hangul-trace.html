@@ -272,6 +272,21 @@
             .big-emoji { font-size: 52px; }
             .big-emoji-box { min-width: 70px; min-height: 80px; }
         }
+        /* iPad (768px~1024px viewport) */
+        @media (min-width: 700px) {
+            h1 { font-size: 36px; }
+            .category-select { font-size: 22px; padding: 8px 18px; }
+            .word-display { font-size: 26px; }
+            .big-emoji { font-size: 130px; }
+            .big-emoji-box { min-width: 180px; min-height: 200px; padding: 20px; }
+            .big-emoji-label { font-size: 26px; }
+            .stroke-guide { max-width: 600px; }
+            .stroke-guide canvas { border-radius: 10px; }
+            .tool-btn { padding: 10px 24px; font-size: 24px; }
+            .pen-dot { width: 34px; height: 34px; }
+            .progress-bar { max-width: 500px; height: 18px; }
+            .encourage { font-size: 40px; }
+        }
         /* 가로 모드 대응 */
         @media (max-height: 500px) {
             .stroke-guide { display: none; }
@@ -375,7 +390,11 @@
     <script>
         // ============ Sound ============
         let audioCtx = null;
-        function getAudioCtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+        function getAudioCtx() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
         function playTone(f, d, t, v) { try { const c = getAudioCtx(), o = c.createOscillator(), g = c.createGain(); o.type = t||'sine'; o.frequency.value = f; g.gain.value = v||0.15; g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+d); o.connect(g); g.connect(c.destination); o.start(c.currentTime); o.stop(c.currentTime+d); } catch(e){} }
         function playWriteSound() { playTone(400 + Math.random()*200, 0.04, 'sine', 0.06); }
         function playSuccessSound() {
@@ -394,14 +413,34 @@
             if (!('speechSynthesis' in window)) return;
             function findVoice() {
                 const voices = speechSynthesis.getVoices();
-                // Prefer Korean female voice
-                koreanVoice = voices.find(v => v.lang.startsWith('ko') && /female|여|yuna|sunhi/i.test(v.name))
-                    || voices.find(v => v.lang.startsWith('ko'))
+                const koVoices = voices.filter(v => v.lang === 'ko-KR' || v.lang === 'ko_KR' || v.lang.startsWith('ko'));
+
+                // iPadOS/iOS: Yuna(여성), macOS: Yuna(여성), Android: 여성 음성 우선
+                // 여성 음성 이름 패턴 (남성 제외)
+                const femaleNames = /yuna|sunhi|sora|jian|female|여성|여자/i;
+                const maleNames = /minsu|jihun|male|남성|남자/i;
+
+                // 1순위: 명확한 여성 음성
+                koreanVoice = koVoices.find(v => femaleNames.test(v.name))
+                    // 2순위: 남성이 아닌 음성
+                    || koVoices.find(v => !maleNames.test(v.name))
+                    // 3순위: 아무 한국어 음성
+                    || koVoices[0]
                     || null;
+
                 if (voices.length > 0) ttsReady = true;
+
+                // 디버그: 사용 가능한 한국어 음성 로그
+                if (koVoices.length > 0) {
+                    console.log('Korean voices:', koVoices.map(v => v.name + ' (' + v.lang + ')').join(', '));
+                    console.log('Selected:', koreanVoice ? koreanVoice.name : 'none');
+                }
             }
             speechSynthesis.onvoiceschanged = findVoice;
             findVoice();
+            // iOS/iPadOS에서 음성 로딩이 느릴 수 있으므로 재시도
+            setTimeout(findVoice, 500);
+            setTimeout(findVoice, 1500);
         }
 
         function speakWord(word) {
@@ -410,7 +449,8 @@
             const utter = new SpeechSynthesisUtterance(word);
             utter.lang = 'ko-KR';
             utter.rate = 0.85;
-            utter.pitch = 1.15;
+            utter.pitch = 1.3;  // 더 높은 피치로 부드러운 느낌
+            utter.volume = 1.0;
             if (koreanVoice) utter.voice = koreanVoice;
             speechSynthesis.speak(utter);
         }
@@ -968,12 +1008,11 @@
         const PEN_COLORS = ['#e8783a','#e74c3c','#3498db','#2ecc71','#9b59b6','#333333'];
 
         function initCanvases() {
-            // Galaxy S25: viewport ~412x915, 이모지 박스 고려하여 캔버스 크기 계산
-            const hasEmoji = window.innerWidth > 360;
-            const emojiBoxWidth = hasEmoji ? 110 : 0;
-            cw = Math.min(460, window.innerWidth - emojiBoxWidth - 24);
-            ch = Math.min(380, window.innerHeight - 380);
-            ch = Math.max(ch, 200);
+            const isTablet = window.innerWidth >= 700;
+            const emojiBoxWidth = isTablet ? 200 : (window.innerWidth > 360 ? 110 : 0);
+            cw = Math.min(isTablet ? 600 : 460, window.innerWidth - emojiBoxWidth - 24);
+            ch = Math.min(isTablet ? 500 : 380, window.innerHeight - (isTablet ? 420 : 380));
+            ch = Math.max(ch, isTablet ? 300 : 200);
 
             [traceCanvas, drawCanvas].forEach(c => {
                 c.width = cw; c.height = ch;
@@ -1006,7 +1045,8 @@
             traceCtx.clearRect(0, 0, cw, ch);
 
             // Calculate font size to fit - bigger for readability
-            let fontSize = Math.min(140, Math.floor((cw - 24) / word.length * 1.2));
+            const maxFontSize = Math.min(200, ch - 30);
+            let fontSize = Math.min(maxFontSize, Math.floor((cw - 24) / word.length * 1.2));
             fontSize = Math.min(fontSize, ch - 24);
 
             const cx = cw / 2, cy = ch / 2;
