@@ -1172,7 +1172,7 @@
         function checkStepAdvance() {
             if (currentStep >= writeSteps.length) return;
             if (stepTotalCount <= 0) return;
-            if (stepFilledCount / stepTotalCount >= 0.4) {
+            if (stepFilledCount / stepTotalCount >= 0.7) {
                 advanceStep();
             }
         }
@@ -1540,8 +1540,8 @@
                 setTimeout(() => showEncourage(), 200);
             }
 
-            // 95%: 완료! 큰 축하 + 칭찬 음성 + 팡 효과
-            if (pct >= 95 && !completed) {
+            // 모든 step 완료 또는 95%: 완료! 큰 축하 + 칭찬 음성 + 팡 효과
+            if ((pct >= 95 || currentStep >= writeSteps.length) && !completed) {
                 completed = true;
                 totalWords++;
                 document.getElementById('progress-fill').style.width = '100%';
@@ -1552,11 +1552,12 @@
                     // 칭찬 메시지 표시
                     showEncourage();
                     // 단어를 먼저 읽고, 이어서 칭찬 메시지 읽기
-                    const currentWord = filteredWords[wordIndex];
                     speakWord(currentWord);
                     setTimeout(() => {
                         const msg = document.getElementById('encourage').textContent;
                         speakWord(msg);
+                        // 칭찬 후 단어 한번 더 읽기
+                        setTimeout(() => speakWord(currentWord), 1500);
                     }, 1200);
                     // 팡! 대형 폭죽 효과
                     const cx = window.innerWidth / 2;
