@@ -57,10 +57,18 @@
         .word-display {
             font-size: 22px; color: #888; margin: 4px 0; min-height: 28px; text-align: center;
         }
-        .category-tag {
-            display: inline-block; padding: 2px 12px; border-radius: 20px;
-            background: #fff0e0; color: #e8783a; font-size: 16px; border: 2px solid #f0d0a0;
+        .category-select {
+            padding: 6px 14px; border-radius: 20px;
+            background: #fff0e0; color: #e8783a; font-size: 18px;
+            border: 3px solid #f0d0a0; font-family: 'Nanum Pen Script', cursive;
+            cursor: pointer; outline: none;
+            appearance: none; -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23e8783a' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 30px;
         }
+        .category-select:focus { border-color: #e8783a; }
 
         .canvas-wrap {
             position: relative; background: white; border-radius: 16px;
@@ -328,7 +336,9 @@
     </div>
 
     <div class="word-display">
-        <span class="category-tag" id="category"></span>
+        <select class="category-select" id="category-select" onchange="onCategoryChange()">
+            <option value="all">전체 🎲</option>
+        </select>
         <span id="word-label" style="font-size:24px; margin-left:8px; color:#555;"></span>
         <span id="word-image" class="word-image"></span>
         <button class="speak-btn" id="speak-btn" onclick="speakWord(currentWord)" title="다시 듣기" style="display:none;">🔊</button>
@@ -439,9 +449,8 @@
             '살쾡이':'🐱','비단뱀':'🐍','구렁이':'🐍','왕뱀':'🐍',
             '멧토끼':'🐰','산토끼':'🐰','들소':'🐃','가젤':'🦌',
             '자칼':'🐺','오카피':'🦒','들개':'🐕','수리':'🦅','야생마':'🐴',
-            '독사':'🐍','살모사':'🐍','들쥐':'🐭',
-            '침팬지':'🐵','고릴라':'🦍','라마':'🦙','담비':'🦡',
-            '도롱뇽':'🦎','솔개':'🦅','노루':'🦌',
+            '개':'🐕','새':'🐦','물고기':'🐟','학':'🦢','이빨':'🦷',
+            '크레파스':'🖍️','색종이':'📄',
             // 과일
             '사과':'🍎','바나나':'🍌','딸기':'🍓','수박':'🍉','포도':'🍇',
             '감':'🍊','배':'🍐','귤':'🍊','복숭아':'🍑','메론':'🍈',
@@ -628,131 +637,105 @@
             spawnConfetti(cx, cy);
         }
 
-        // ============ Word Database ============
+        // ============ Word Database (5세 수준) ============
         const WORDS = {
             '동물 🐾': [
-                '토끼','곰','사자','기린','펭귄',
-                '나비','공룡','오리','닭','소',
-                '말','돼지','양','염소','사슴','여우','늑대','참새',
-                '고래','상어','문어','게','새우','조개','해마','매미',
-                '수달','판다','하마','악어',
-                '까치','제비','물개','낙타','치타',
-                '표범','물소','황새','타조',
-                '가재',
-                '뱀','꿀벌','개미','거미',
-                '나방','잉어','해마',
-                '노루','라마','담비','박쥐',
-                '자라','매','솔개','백로','꿩',
-                '거위','백조','홍학','갈치',
-                '붕어','메기','장어','복어','송어','농어','연어','참치','광어','넙치',
-                '방어','쥐','생쥐','파리','모기','멸치','꽁치','대구','산양',
-                '퓨마','맥','투칸','앵무','비버',
-                '왕뱀','들소','영양','가젤','누','자칼',
-                '들개','수리','독사','들쥐',
+                '강아지','고양이','토끼','곰','사자','호랑이','코끼리','기린',
+                '원숭이','펭귄','나비','개구리','거북이','공룡','오리','닭',
+                '소','말','돼지','양','새','물고기','상어','고래',
+                '문어','게','뱀','여우','다람쥐','사슴','판다',
+                '악어','하마','개미','거미','꿀벌','달팽이','참새',
+                '쥐','개','학','독수리','잠자리','낙타',
             ],
             '과일 🍎': [
-                '참외','앵두','매실','유자','석류','비파','모과','대추','밤',
-                '호두','잣','리치','용과','머루',
-                '다래','오디','자몽','금귤','곶감',
-                '감귤','천도','백도','황도','홍시','대봉','은행',
-                '탱자','부사','홍옥','피칸',
-            ],
-            '가족 👨‍👩‍👦': [
-                '엄마','아빠','누나','형','언니','오빠','동생','아기',
-                '삼촌','이모','고모','사촌','가족','식구',
-                '조카','막내','첫째','둘째','형제','자매','어른',
-            ],
-            '사랑 💕': [
-                '기뻐','웃자','힘내',
-                '멋져',
-                '착해',
-                '설레','신나','평화',
-                '희망','꿈','소원','약속','비밀','우정',
-            ],
-            '친구 🧒': [
-                '친구','단짝','베프','짝꿍','이웃','동네',
-                '반장','소풍','생일','파티','선물','편지','인사','안녕','잘가',
-                '설레','기대','깜짝','비밀','약속',
+                '사과','바나나','딸기','수박','포도','감','배','귤',
+                '복숭아','참외','메론','망고','키위','체리','오렌지',
+                '레몬','자두','앵두','밤','대추',
             ],
             '음식 🍚': [
-                '밥','김치','사과','딸기','수박','포도','감','배',
-                '귤','우유','빵','과자','치킨','피자','라면','김밥',
-                '떡','만두','국','찌개','잡채','갈비',
-                '쿠키','사탕','젤리','팝콘','도넛',
-                '치즈','햄','계란','두부','감자','당근','오이',
-                '콩','버섯','양파','마늘','호박',
-                '메론','망고','키위','체리','자두','살구','레몬','라임',
-                '주스','물','차','우유','두유','푸딩',
+                '밥','빵','우유','과자','떡','만두','국','라면',
+                '피자','치킨','김밥','계란','감자','당근','사탕',
+                '젤리','케이크','주스','물','치즈','김치',
+                '고구마','옥수수','햄버거','아이스크림',
+            ],
+            '가족 👨‍👩‍👦': [
+                '엄마','아빠','할머니','할아버지','누나','형',
+                '언니','오빠','동생','아기','가족',
             ],
             '자연 🌈': [
-                '하늘','구름','비','눈','바람','해','달','별','꽃','나무',
-                '풀','산','바다','강','호수','번개','천둥','안개','이슬',
-                '서리','폭포','동굴','사막','숲','들판','초원','계곡','섬','해변',
-                '모래','파도','조개','돌','흙','연못','개울','샘물','아침',
-                '낮','저녁','밤','새벽','일출','일몰','노을','봄','여름','가을',
-                '겨울','태풍','햇살','달빛','별빛','우주','지구',
-            ],
-            '탈것 🚗': [
-                '버스','기차','배','트럭','택시',
-                '로켓','요트','카누','썰매',
-                '트램','드론','보트','뗏목',
+                '하늘','구름','비','눈','바람','해','달','별',
+                '꽃','나무','풀','산','바다','강','무지개',
+                '돌','흙','모래','봄','여름','가을','겨울',
+                '아침','밤','숲',
             ],
             '색깔 🎨': [
-                '빨강','주황','노랑','초록','파랑','보라','분홍','하양','검정','갈색',
-                '연두','금색','은색','남색','청록','자주','회색',
+                '빨강','주황','노랑','초록','파랑','보라',
+                '분홍','하양','검정',
             ],
             '몸 🖐️': [
-                '머리','눈','코','입','귀','손','발','팔','다리','배',
-                '등','어깨','무릎','이마','볼','턱','목','가슴',
-                '허리','손목','발목','손톱','발톱','눈썹','혀',
-            ],
-            '장소 🏠': [
-                '집','학교','공원','마트','병원',
-                '교실','부엌',
-                '거실','침실','옥상','정원','골목',
-                '시장','빵집','꽃집','서점','약국',
+                '머리','눈','코','입','귀','손','발',
+                '팔','다리','배','목','무릎','어깨','혀','이빨',
             ],
             '물건 📦': [
-                '공','인형','로봇','블록','책','연필','가위','풀','종이',
-                '컵','접시','모자','신발','양말','옷','가방','우산',
-                '시계','거울','빗','치약','칫솔','수건','비누','열쇠','지갑','안경',
-                '전등','촛불','성냥',
-                '풍선','딱지','구슬','퍼즐','물감','붓','점토',
+                '공','인형','책','연필','가위','종이','컵',
+                '모자','신발','옷','가방','우산','시계','풍선',
+                '블록','거울','비누','안경','크레파스','색종이',
             ],
-            '날씨 ☀️': [
-                '맑음','흐림','비','눈','바람','태풍','안개','우박','서리',
-                '이슬','한파','황사','가뭄','홍수','천둥','번개',
-            ],
-            '숫자 🔢': [
-                '하나','둘','셋','넷','다섯','여섯','일곱','여덟','아홉','열',
-                '스물','서른','마흔','쉰','예순','일흔','여든','아흔','백','천',
-            ],
-            '인사 👋': [
-                '안녕','잘자',
-                '잘가',
-            ],
-            '놀이 🎮': [
-                '그네','시소',
-                '철봉','퍼즐',
-                '레고',
-            ],
-            '직업 👩‍⚕️': [
-                '의사',
-                '화가','가수','배우','농부','어부','목수',
+            '탈것 🚗': [
+                '자동차','버스','기차','비행기','배','자전거',
+                '택시','소방차','경찰차','로켓','헬리콥터',
             ],
         };
 
-        // Flatten for random access (2글자 이하만)
+        // Flatten for random access
         let allWords = [];
         let allCategories = [];
+        let filteredWords = [];
+        let filteredCategories = [];
+        let selectedCategory = 'all';
+
         Object.keys(WORDS).forEach(cat => {
             WORDS[cat].forEach(w => {
-                if (w.length <= 2) {
-                    allWords.push(w);
-                    allCategories.push(cat);
-                }
+                allWords.push(w);
+                allCategories.push(cat);
             });
         });
+
+        // 드롭박스에 카테고리 추가
+        function initCategorySelect() {
+            const sel = document.getElementById('category-select');
+            Object.keys(WORDS).forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                sel.appendChild(opt);
+            });
+        }
+
+        function filterByCategory() {
+            filteredWords = [];
+            filteredCategories = [];
+            if (selectedCategory === 'all') {
+                filteredWords = [...allWords];
+                filteredCategories = [...allCategories];
+            } else {
+                allWords.forEach((w, i) => {
+                    if (allCategories[i] === selectedCategory) {
+                        filteredWords.push(w);
+                        filteredCategories.push(allCategories[i]);
+                    }
+                });
+            }
+        }
+
+        function onCategoryChange() {
+            selectedCategory = document.getElementById('category-select').value;
+            filterByCategory();
+            nextWord();
+        }
+
+        // 초기 필터
+        filterByCategory();
 
         // ============ Hangul Decomposition & Stroke Guide ============
         const CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
@@ -979,6 +962,7 @@
         let hitCount = 0;
         let totalTracePixels = 0;
         let completed = false;
+        let encouraged = false;
         let soundCounter = 0;
 
         const PEN_COLORS = ['#e8783a','#e74c3c','#3498db','#2ecc71','#9b59b6','#333333'];
@@ -1052,13 +1036,13 @@
             traceCtx.restore();
 
             // Create trace pixel map for hit detection
-            // alpha > 128 = only the dark dotted strokes, not the light interior fill
+            // alpha > 80 = outline strokes + dotted strokes, not the light fill (alpha ~64)
             const imageData = traceCtx.getImageData(0, 0, cw, ch);
             tracePixels = new Uint8Array(cw * ch);
             totalTracePixels = 0;
             for (let i = 0; i < cw * ch; i++) {
                 const a = imageData.data[i * 4 + 3];
-                if (a > 128) {
+                if (a > 80) {
                     tracePixels[i] = 1;
                     totalTracePixels++;
                 }
@@ -1075,7 +1059,6 @@
 
         function startDraw(e) {
             e.preventDefault();
-            if (completed) return;
             drawing = true;
             const p = getPos(e);
             lastX = p.x; lastY = p.y;
@@ -1084,14 +1067,14 @@
 
         function doDraw(e) {
             e.preventDefault();
-            if (!drawing || completed) return;
+            if (!drawing) return;
             const p = getPos(e);
 
             drawCtx.beginPath();
             drawCtx.moveTo(lastX, lastY);
             drawCtx.lineTo(p.x, p.y);
             drawCtx.strokeStyle = penColor;
-            drawCtx.lineWidth = 5;
+            drawCtx.lineWidth = 14;
             drawCtx.lineCap = 'round';
             drawCtx.lineJoin = 'round';
             drawCtx.stroke();
@@ -1117,7 +1100,7 @@
         }
 
         function checkHit(x, y) {
-            const radius = 6;
+            const radius = 14;
             const ix = Math.round(x), iy = Math.round(y);
             for (let dy = -radius; dy <= radius; dy++) {
                 for (let dx = -radius; dx <= radius; dx++) {
@@ -1139,13 +1122,45 @@
             const pct = Math.min(100, (hitCount / totalTracePixels) * 100);
             document.getElementById('progress-fill').style.width = pct + '%';
 
-            if (pct >= 80 && !completed) {
+            // 70%: 칭찬 메시지 + 효과 (계속 쓸 수 있음)
+            if (pct >= 70 && !encouraged) {
+                encouraged = true;
+                playSuccessSound();
+                setTimeout(() => showEncourage(), 200);
+            }
+
+            // 95%: 완료! 큰 축하 + 칭찬 음성 + 팡 효과
+            if (pct >= 95 && !completed) {
                 completed = true;
                 totalWords++;
                 document.getElementById('progress-fill').style.width = '100%';
-                playSuccessSound();
                 checkSticker();
-                setTimeout(() => showEncourage(), 200);
+
+                // 큰 축하 효과
+                setTimeout(() => {
+                    // 칭찬 메시지 표시
+                    showEncourage();
+                    // 칭찬 메시지를 음성으로 읽기
+                    const msg = document.getElementById('encourage').textContent;
+                    speakWord(msg);
+                    // 팡! 대형 폭죽 효과
+                    const cx = window.innerWidth / 2;
+                    const cy = window.innerHeight / 2;
+                    spawnHeartExplosion(cx, cy, 30);
+                    spawnConfetti(cx, cy);
+                    setTimeout(() => {
+                        spawnHeartExplosion(cx - 80, cy - 50, 15);
+                        spawnConfetti(cx + 80, cy - 50);
+                    }, 300);
+                    setTimeout(() => {
+                        spawnHeartExplosion(cx + 60, cy + 30, 15);
+                        spawnConfetti(cx - 60, cy + 30);
+                    }, 600);
+                    // 완료 효과음 (팡!)
+                    playSuccessSound();
+                    setTimeout(() => playSuccessSound(), 200);
+                    setTimeout(() => playSuccessSound(), 400);
+                }, 300);
             }
         }
 
@@ -1163,15 +1178,15 @@
 
         function nextWord() {
             completed = false;
+            encouraged = false;
             document.getElementById('progress-fill').style.width = '0%';
             document.getElementById('encourage').textContent = '';
             drawCtx.clearRect(0, 0, cw, ch);
 
-            const idx = Math.floor(Math.random() * allWords.length);
-            currentWord = allWords[idx];
-            currentCat = allCategories[idx];
+            const idx = Math.floor(Math.random() * filteredWords.length);
+            currentWord = filteredWords[idx];
+            currentCat = filteredCategories[idx];
 
-            document.getElementById('category').textContent = currentCat;
             document.getElementById('word-label').textContent = currentWord;
 
             // Show emoji image
@@ -1215,6 +1230,7 @@
         }, { passive: false });
 
         // Init
+        initCategorySelect();
         initCanvases();
         initPenColors();
         nextWord();
