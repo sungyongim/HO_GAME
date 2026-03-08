@@ -1018,6 +1018,209 @@
             ctx.fill();
         }
 
+        // ============ Stroke Order Enforcement ============
+        const VERTICAL_VOWELS = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅣ'];
+        const HORIZONTAL_VOWELS = ['ㅗ','ㅛ','ㅜ','ㅠ','ㅡ'];
+
+        function getJamoRegions(bbox, jungJamo, hasJong) {
+            const { x1, y1, x2, y2 } = bbox;
+            const w = x2 - x1, h = y2 - y1;
+
+            if (VERTICAL_VOWELS.includes(jungJamo)) {
+                if (hasJong) {
+                    return {
+                        cho:  { x1: x1, y1: y1, x2: x1 + w * 0.62, y2: y1 + h * 0.62 },
+                        jung: { x1: x1 + w * 0.48, y1: y1, x2: x2, y2: y1 + h * 0.67 },
+                        jong: { x1: x1, y1: y1 + h * 0.53, x2: x2, y2: y2 }
+                    };
+                } else {
+                    return {
+                        cho:  { x1: x1, y1: y1, x2: x1 + w * 0.58, y2: y2 },
+                        jung: { x1: x1 + w * 0.42, y1: y1, x2: x2, y2: y2 }
+                    };
+                }
+            } else if (HORIZONTAL_VOWELS.includes(jungJamo)) {
+                if (hasJong) {
+                    return {
+                        cho:  { x1: x1, y1: y1, x2: x2, y2: y1 + h * 0.45 },
+                        jung: { x1: x1, y1: y1 + h * 0.33, x2: x2, y2: y1 + h * 0.67 },
+                        jong: { x1: x1, y1: y1 + h * 0.55, x2: x2, y2: y2 }
+                    };
+                } else {
+                    return {
+                        cho:  { x1: x1, y1: y1, x2: x2, y2: y1 + h * 0.58 },
+                        jung: { x1: x1, y1: y1 + h * 0.38, x2: x2, y2: y2 }
+                    };
+                }
+            } else {
+                // Complex vowels (ㅘㅙㅚㅝㅞㅟㅢ)
+                if (hasJong) {
+                    return {
+                        cho:  { x1: x1, y1: y1, x2: x1 + w * 0.58, y2: y1 + h * 0.58 },
+                        jung: { x1: x1 + w * 0.38, y1: y1, x2: x2, y2: y1 + h * 0.67 },
+                        jong: { x1: x1, y1: y1 + h * 0.55, x2: x2, y2: y2 }
+                    };
+                } else {
+                    return {
+                        cho:  { x1: x1, y1: y1, x2: x1 + w * 0.55, y2: y1 + h * 0.58 },
+                        jung: { x1: x1 + w * 0.33, y1: y1, x2: x2, y2: y2 }
+                    };
+                }
+            }
+        }
+
+        function buildWriteSteps(word) {
+            writeSteps = [];
+            for (let ci = 0; ci < word.length; ci++) {
+                const d = decomposeHangul(word[ci]);
+                const cm = charMasks[ci];
+                if (!cm) continue;
+
+                if (!d) {
+                    writeSteps.push({ charIdx: ci, jamoType: 'whole', region: cm.bbox });
+                    continue;
+                }
+
+                const jungJamo = JUNG[d.jung];
+                const hasJong = d.jong > 0;
+                const regions = getJamoRegions(cm.bbox, jungJamo, hasJong);
+
+                writeSteps.push({ charIdx: ci, jamoType: 'cho', region: regions.cho });
+                writeSteps.push({ charIdx: ci, jamoType: 'jung', region: regions.jung });
+                if (hasJong) {
+                    writeSteps.push({ charIdx: ci, jamoType: 'jong', region: regions.jong });
+                }
+            }
+
+            // Precompute pixel counts for each step
+            for (let si = 0; si < writeSteps.length; si++) {
+                const step = writeSteps[si];
+                const cm = charMasks[step.charIdx];
+                const r = step.region;
+                let count = 0;
+                const rx1 = Math.max(0, Math.floor(r.x1));
+                const ry1 = Math.max(0, Math.floor(r.y1));
+                const rx2 = Math.min(cw - 1, Math.floor(r.x2));
+                const ry2 = Math.min(ch - 1, Math.floor(r.y2));
+                for (let y = ry1; y <= ry2; y++) {
+                    for (let x = rx1; x <= rx2; x++) {
+                        const idx = y * cw + x;
+                        if (cm.mask[idx] === 1 && fillMask[idx] === 1) count++;
+                    }
+                }
+                step.totalPixels = count;
+            }
+
+            currentStep = 0;
+            stepFilledCount = 0;
+            stepTotalCount = writeSteps.length > 0 ? writeSteps[0].totalPixels : 0;
+        }
+
+        function advanceStep() {
+            if (currentStep >= writeSteps.length) return;
+
+            // Step complete sound
+            playTone(600, 0.08, 'sine', 0.1);
+            setTimeout(() => playTone(800, 0.08, 'sine', 0.1), 60);
+
+            // Auto-complete current step region
+            const step = writeSteps[currentStep];
+            const cm = charMasks[step.charIdx];
+            const r = step.region;
+            const rx1 = Math.max(0, Math.floor(r.x1));
+            const ry1 = Math.max(0, Math.floor(r.y1));
+            const rx2 = Math.min(cw - 1, Math.floor(r.x2));
+            const ry2 = Math.min(ch - 1, Math.floor(r.y2));
+            const rw = rx2 - rx1 + 1, rh = ry2 - ry1 + 1;
+
+            if (rw > 0 && rh > 0) {
+                const tc = document.createElement('canvas');
+                tc.width = 1; tc.height = 1;
+                const tctx = tc.getContext('2d');
+                tctx.fillStyle = penColor;
+                tctx.fillRect(0, 0, 1, 1);
+                const pc = tctx.getImageData(0, 0, 1, 1).data;
+
+                const imgData = drawCtx.getImageData(rx1, ry1, rw, rh);
+                for (let py = 0; py < rh; py++) {
+                    for (let px = 0; px < rw; px++) {
+                        const gx = rx1 + px, gy = ry1 + py;
+                        const idx = gy * cw + gx;
+                        if (cm.mask[idx] === 1 && fillMask[idx] === 1 && filledTrack[idx] === 0) {
+                            const pidx = (py * rw + px) * 4;
+                            imgData.data[pidx] = pc[0];
+                            imgData.data[pidx + 1] = pc[1];
+                            imgData.data[pidx + 2] = pc[2];
+                            imgData.data[pidx + 3] = 255;
+                            filledTrack[idx] = 1;
+                            hitCount++;
+                        }
+                    }
+                }
+                drawCtx.putImageData(imgData, rx1, ry1);
+            }
+
+            currentStep++;
+            if (currentStep < writeSteps.length) {
+                stepFilledCount = 0;
+                stepTotalCount = writeSteps[currentStep].totalPixels;
+                highlightCurrentStep();
+            }
+            updateProgress();
+        }
+
+        function checkStepAdvance() {
+            if (currentStep >= writeSteps.length) return;
+            if (stepTotalCount <= 0) return;
+            if (stepFilledCount / stepTotalCount >= 0.4) {
+                advanceStep();
+            }
+        }
+
+        function highlightCurrentStep() {
+            if (!traceImageData) return;
+            // Restore clean trace
+            traceCtx.putImageData(traceImageData, 0, 0);
+
+            if (currentStep >= writeSteps.length) return;
+            const step = writeSteps[currentStep];
+            const r = step.region;
+
+            // Highlight region with glow
+            traceCtx.save();
+            traceCtx.fillStyle = 'rgba(255, 210, 60, 0.18)';
+            traceCtx.fillRect(r.x1, r.y1, r.x2 - r.x1, r.y2 - r.y1);
+            traceCtx.strokeStyle = 'rgba(232, 120, 58, 0.45)';
+            traceCtx.lineWidth = 2;
+            traceCtx.setLineDash([5, 5]);
+            traceCtx.strokeRect(r.x1, r.y1, r.x2 - r.x1, r.y2 - r.y1);
+            traceCtx.restore();
+
+            highlightGuideJamo();
+        }
+
+        function highlightGuideJamo() {
+            const guide = document.getElementById('stroke-guide');
+            const canvases = guide.querySelectorAll('canvas');
+            canvases.forEach((cvs, i) => {
+                if (i === currentStep) {
+                    cvs.style.border = '3px solid #e8783a';
+                    cvs.style.background = '#fff3e6';
+                    cvs.style.boxShadow = '0 0 8px rgba(232,120,58,0.4)';
+                } else if (i < currentStep) {
+                    cvs.style.border = '2px solid #aaa';
+                    cvs.style.background = '#f0f0f0';
+                    cvs.style.boxShadow = 'none';
+                    cvs.style.opacity = '0.6';
+                } else {
+                    cvs.style.border = '2px solid #eee';
+                    cvs.style.background = '#fafafa';
+                    cvs.style.boxShadow = 'none';
+                    cvs.style.opacity = '1';
+                }
+            });
+        }
+
         // ============ Canvas Setup ============
         const traceCanvas = document.getElementById('trace-canvas');
         const drawCanvas = document.getElementById('draw-canvas');
@@ -1039,6 +1242,12 @@
         let completed = false;
         let encouraged = false;
         let soundCounter = 0;
+        let charMasks = [];
+        let writeSteps = [];
+        let currentStep = 0;
+        let stepFilledCount = 0;
+        let stepTotalCount = 0;
+        let traceImageData = null;
 
         const PEN_COLORS = ['#e8783a','#e74c3c','#3498db','#2ecc71','#9b59b6','#333333'];
 
@@ -1132,8 +1341,40 @@
                 if (fillData.data[i * 4 + 3] > 30) fillMask[i] = 1;
             }
 
+            // Per-character masks for stroke order enforcement
+            charMasks = [];
+            const _mc = document.createElement('canvas');
+            _mc.width = cw; _mc.height = ch;
+            const _mctx = _mc.getContext('2d');
+            _mctx.font = `${fontSize}px 'Jua', sans-serif`;
+            _mctx.textAlign = 'left';
+            _mctx.textBaseline = 'middle';
+            const fullW = _mctx.measureText(word).width;
+            const baseX = cx - fullW / 2;
+            let accX = baseX;
+            for (let ci = 0; ci < word.length; ci++) {
+                const chW = _mctx.measureText(word[ci]).width;
+                _mctx.clearRect(0, 0, cw, ch);
+                _mctx.fillStyle = '#000';
+                _mctx.fillText(word[ci], accX, cy);
+                const cData = _mctx.getImageData(0, 0, cw, ch);
+                const cMask = new Uint8Array(cw * ch);
+                let mnX = cw, mxX = 0, mnY = ch, mxY = 0;
+                for (let i = 0; i < cw * ch; i++) {
+                    if (cData.data[i * 4 + 3] > 30) {
+                        cMask[i] = 1;
+                        const px = i % cw, py = Math.floor(i / cw);
+                        if (px < mnX) mnX = px;
+                        if (px > mxX) mxX = px;
+                        if (py < mnY) mnY = py;
+                        if (py > mxY) mxY = py;
+                    }
+                }
+                charMasks.push({ mask: cMask, bbox: { x1: mnX, y1: mnY, x2: mxX, y2: mxY } });
+                accX += chW;
+            }
+
             // 진행률: fillMask(글자 내부 전체)를 기준으로 추적
-            // 점선 감지용 tracePixels는 autoFill 근처 판단에만 사용
             const imageData = traceCtx.getImageData(0, 0, cw, ch);
             tracePixels = new Uint8Array(cw * ch);
             for (let i = 0; i < cw * ch; i++) {
@@ -1149,6 +1390,9 @@
             }
             hitCount = 0;
             filledTrack = new Uint8Array(cw * ch);
+
+            // Save clean trace canvas for highlight overlay
+            traceImageData = traceCtx.getImageData(0, 0, cw, ch);
         }
 
         // ============ Drawing ============
@@ -1166,40 +1410,39 @@
             checkHit(p.x, p.y);
         }
 
-        // 점선 근처에 그릴 때 글자 내부를 자동 채움
+        // 점선 근처에 그릴 때 현재 step 영역 내 글자를 자동 채움
         function autoFillAt(x, y) {
-            if (!fillMask) return;
-            const r = 20; // 자동 채움 반경
+            if (!fillMask || currentStep >= writeSteps.length) return;
+            const r = 20;
             const ix = Math.round(x), iy = Math.round(y);
-            // 이 위치가 글자 근처인지 확인
-            let nearTrace = false;
-            for (let dy = -8; dy <= 8; dy += 4) {
-                for (let dx = -8; dx <= 8; dx += 4) {
+
+            const step = writeSteps[currentStep];
+            const cm = charMasks[step.charIdx];
+            const region = step.region;
+
+            // Check if near current step region's char mask
+            let nearStep = false;
+            for (let dy = -12; dy <= 12; dy += 4) {
+                for (let dx = -12; dx <= 12; dx += 4) {
                     const px = ix + dx, py = iy + dy;
-                    if (px >= 0 && px < cw && py >= 0 && py < ch) {
-                        if (tracePixels[py * cw + px] >= 1) { nearTrace = true; break; }
+                    if (px >= 0 && px < cw && py >= 0 && py < ch &&
+                        px >= region.x1 && px <= region.x2 && py >= region.y1 && py <= region.y2 &&
+                        cm.mask[py * cw + px] === 1) {
+                        nearStep = true; break;
                     }
                 }
-                if (nearTrace) break;
+                if (nearStep) break;
             }
-            if (!nearTrace) return;
+            if (!nearStep) return;
 
-            // 글자 내부를 원형으로 채우기
-            drawCtx.save();
-            drawCtx.beginPath();
-            drawCtx.arc(x, y, r, 0, Math.PI * 2);
-            drawCtx.clip();
-
-            // fillMask 영역만 penColor로 채움
-            const imgData = drawCtx.getImageData(
-                Math.max(0, ix - r), Math.max(0, iy - r),
-                Math.min(r * 2, cw - Math.max(0, ix - r)),
-                Math.min(r * 2, ch - Math.max(0, iy - r))
-            );
+            // Fill within current step region only
             const startX = Math.max(0, ix - r), startY = Math.max(0, iy - r);
-            const w = imgData.width, h = imgData.height;
+            const endX = Math.min(cw, ix + r), endY = Math.min(ch, iy + r);
+            const w = endX - startX, h = endY - startY;
+            if (w <= 0 || h <= 0) return;
 
-            // Parse pen color
+            const imgData = drawCtx.getImageData(startX, startY, w, h);
+
             const tc = document.createElement('canvas').getContext('2d');
             tc.fillStyle = penColor;
             tc.fillRect(0, 0, 1, 1);
@@ -1210,25 +1453,25 @@
                     const gx = startX + px, gy = startY + py;
                     const ddx = gx - ix, ddy = gy - iy;
                     if (ddx * ddx + ddy * ddy > r * r) continue;
-                    if (gx < 0 || gx >= cw || gy < 0 || gy >= ch) continue;
-                    if (fillMask[gy * cw + gx] === 1) {
+                    if (gx < region.x1 || gx > region.x2 || gy < region.y1 || gy > region.y2) continue;
+                    const fidx = gy * cw + gx;
+                    if (cm.mask[fidx] === 1 && fillMask[fidx] === 1) {
                         const idx = (py * w + px) * 4;
                         imgData.data[idx] = pc[0];
                         imgData.data[idx + 1] = pc[1];
                         imgData.data[idx + 2] = pc[2];
                         imgData.data[idx + 3] = 255;
-                        // 진행률 추적: 새로 채워진 픽셀 카운트
-                        const fidx = gy * cw + gx;
                         if (filledTrack && filledTrack[fidx] === 0) {
                             filledTrack[fidx] = 1;
                             hitCount++;
+                            stepFilledCount++;
                         }
                     }
                 }
             }
             drawCtx.putImageData(imgData, startX, startY);
-            drawCtx.restore();
             updateProgress();
+            checkStepAdvance();
         }
 
         function doDraw(e) {
@@ -1260,22 +1503,29 @@
         }
 
         function checkHit(x, y) {
+            if (currentStep >= writeSteps.length) return;
             const radius = 14;
             const ix = Math.round(x), iy = Math.round(y);
+            const step = writeSteps[currentStep];
+            const cm = charMasks[step.charIdx];
+            const region = step.region;
+
             for (let dy = -radius; dy <= radius; dy++) {
                 for (let dx = -radius; dx <= radius; dx++) {
                     if (dx*dx + dy*dy > radius*radius) continue;
                     const px = ix + dx, py = iy + dy;
                     if (px < 0 || px >= cw || py < 0 || py >= ch) continue;
+                    if (px < region.x1 || px > region.x2 || py < region.y1 || py > region.y2) continue;
                     const idx = py * cw + px;
-                    // fillMask 기반 진행률 추적
-                    if (filledTrack && fillMask[idx] === 1 && filledTrack[idx] === 0) {
+                    if (filledTrack && cm.mask[idx] === 1 && fillMask[idx] === 1 && filledTrack[idx] === 0) {
                         filledTrack[idx] = 1;
                         hitCount++;
+                        stepFilledCount++;
                     }
                 }
             }
             updateProgress();
+            checkStepAdvance();
         }
 
         function updateProgress() {
@@ -1335,6 +1585,11 @@
                 // Reset hit tracking
                 if (filledTrack) filledTrack = new Uint8Array(cw * ch);
                 hitCount = 0;
+                // Reset step state
+                currentStep = 0;
+                stepFilledCount = 0;
+                stepTotalCount = writeSteps.length > 0 ? writeSteps[0].totalPixels : 0;
+                highlightCurrentStep();
                 updateProgress();
             }
         }
@@ -1377,6 +1632,8 @@
 
             drawDottedWord(currentWord);
             drawStrokeGuide(currentWord);
+            buildWriteSteps(currentWord);
+            highlightCurrentStep();
         }
 
         // Event listeners
