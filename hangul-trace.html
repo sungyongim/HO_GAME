@@ -1162,11 +1162,35 @@
 
             currentStep++;
             if (currentStep < writeSteps.length) {
-                stepFilledCount = 0;
                 stepTotalCount = writeSteps[currentStep].totalPixels;
+                // Count pixels already filled by previous step overlap
+                stepFilledCount = countPreFilledInStep(currentStep);
                 highlightCurrentStep();
+                // Auto-advance if already filled enough from overlap
+                if (stepTotalCount > 0 && stepFilledCount / stepTotalCount >= 0.7) {
+                    advanceStep();
+                    return;
+                }
             }
             updateProgress();
+        }
+
+        function countPreFilledInStep(stepIdx) {
+            const step = writeSteps[stepIdx];
+            const cm = charMasks[step.charIdx];
+            const r = step.region;
+            let count = 0;
+            const rx1 = Math.max(0, Math.floor(r.x1));
+            const ry1 = Math.max(0, Math.floor(r.y1));
+            const rx2 = Math.min(cw - 1, Math.floor(r.x2));
+            const ry2 = Math.min(ch - 1, Math.floor(r.y2));
+            for (let y = ry1; y <= ry2; y++) {
+                for (let x = rx1; x <= rx2; x++) {
+                    const idx = y * cw + x;
+                    if (cm.mask[idx] === 1 && fillMask[idx] === 1 && filledTrack[idx] === 1) count++;
+                }
+            }
+            return count;
         }
 
         function checkStepAdvance() {
