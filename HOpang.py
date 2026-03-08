@@ -294,12 +294,10 @@ class AnipangGame:
         self.dragging = False
         self.drag_start = None       # (row, col)
         self.drag_start_pos = None   # (px_x, px_y)
+        self.drag_current_pos = None # 드래그 중 현재 마우스 픽셀 좌표
 
         # 보드 초기화 (매치 없이)
         self.init_board()
-
-        # 사운드 생성
-        self.create_sounds()
 
         # 현재 버전에서는 소리를 사용하지 않으므로 빈 딕셔너리만 유지
         self.sounds = {}
@@ -397,6 +395,7 @@ class AnipangGame:
         self.dragging = True
         self.drag_start = cell
         self.drag_start_pos = (mx, my)
+        self.drag_current_pos = (mx, my)
         self.play_sound("select")
 
     def handle_mouse_up(self, mx, my):
@@ -417,6 +416,7 @@ class AnipangGame:
 
         self.drag_start = None
         self.drag_start_pos = None
+        self.drag_current_pos = None
 
         # 드래그 거리가 충분한지 확인
         if abs(dx) < threshold and abs(dy) < threshold:
@@ -435,6 +435,11 @@ class AnipangGame:
         # 보드 범위 확인
         if 0 <= target_row < ROWS and 0 <= target_col < COLS:
             self.start_swap((start_row, start_col), (target_row, target_col))
+
+    def handle_mouse_move(self, mx, my):
+        """드래그 중 마우스 위치 업데이트"""
+        if self.dragging:
+            self.drag_current_pos = (mx, my)
 
     def start_swap(self, cell1, cell2):
         """스왑 애니메이션 시작"""
@@ -1117,6 +1122,14 @@ class AnipangGame:
                     self.draw_cute_animal(screen, val, cx, cy)
                     continue
 
+                # 드래그 중인 셀은 나중에 최상위 레이어로 그림
+                if self.dragging and self.drag_start == (row, col) and self.drag_current_pos:
+                    # 원래 위치에 반투명 잔상 표시
+                    cx = BOARD_X + col * CELL_SIZE + CELL_SIZE // 2
+                    cy = BOARD_Y + row * CELL_SIZE + CELL_SIZE // 2
+                    self.draw_cute_animal(screen, val, cx, cy, 60, alpha=0.3)
+                    continue
+
                 # 일반 셀
                 cx = BOARD_X + col * CELL_SIZE + CELL_SIZE // 2
                 cy = BOARD_Y + row * CELL_SIZE + CELL_SIZE // 2
@@ -1125,12 +1138,15 @@ class AnipangGame:
                 bounce = math.sin(pygame.time.get_ticks() / 500 + row * 0.3 + col * 0.5) * 2
                 cy += int(bounce)
 
-                # 드래그 중인 셀은 살짝 크게
-                draw_size = 60
-                if self.dragging and self.drag_start == (row, col):
-                    draw_size = 70
+                self.draw_cute_animal(screen, val, cx, cy, 60)
 
-                self.draw_cute_animal(screen, val, cx, cy, draw_size)
+        # 드래그 중인 아이콘을 최상위 레이어로 그림 (마우스 커서 위치)
+        if self.dragging and self.drag_start and self.drag_current_pos:
+            dr, dc = self.drag_start
+            drag_val = self.board[dr][dc]
+            if drag_val is not None:
+                dmx, dmy = self.drag_current_pos
+                self.draw_cute_animal(screen, drag_val, dmx, dmy, 70)
 
         # 파티클
         for p in self.particles:
@@ -1774,6 +1790,11 @@ def main():
                         if hotris_game.handle_mouse(mx, my, "down"):
                             pass
             
+            elif event.type == pygame.MOUSEMOTION:
+                if GAME_STATE == "anipang" and anipang_game:
+                    mx, my = event.pos
+                    anipang_game.handle_mouse_move(mx, my)
+
             elif event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1 and GAME_STATE == "anipang" and anipang_game:
                     mx, my = event.pos

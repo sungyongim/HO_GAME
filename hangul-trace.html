@@ -152,10 +152,10 @@
         /* Stroke Guide Panel */
         .stroke-guide {
             display: flex;
-            gap: 3px;
-            padding: 6px 8px;
+            gap: 6px;
+            padding: 10px 12px;
             background: white;
-            border-radius: 12px;
+            border-radius: 16px;
             border: 3px solid #f0d8b0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.06);
             margin: 4px 0;
@@ -163,27 +163,79 @@
             justify-content: center;
             align-items: center;
             flex-wrap: wrap;
-            max-width: 380px;
+            max-width: 500px;
         }
         .stroke-guide canvas {
-            border-radius: 6px;
+            border-radius: 8px;
             border: 2px solid #eee;
             background: #fafafa;
             flex-shrink: 0;
         }
         .stroke-guide .jamo-separator {
-            width: 2px;
-            height: 28px;
+            width: 3px;
+            height: 50px;
             background: #e0e0e0;
-            border-radius: 1px;
-            margin: 0 2px;
+            border-radius: 2px;
+            margin: 0 4px;
             flex-shrink: 0;
         }
         .stroke-guide-label {
-            font-size: 13px;
-            color: #bbb;
+            font-size: 16px;
+            color: #999;
             text-align: center;
             margin: 0;
+            font-weight: bold;
+        }
+
+        .word-image {
+            font-size: 36px;
+            display: inline-block;
+            animation: imagePopIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        @keyframes imagePopIn {
+            0% { transform: scale(0) rotate(-15deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        .canvas-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .big-emoji-box {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 24px;
+            border: 4px solid #f0d8b0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 16px 20px;
+            min-width: 160px;
+            min-height: 180px;
+            animation: imagePopIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        .big-emoji-box.show { display: flex; }
+        .big-emoji {
+            font-size: 120px;
+            line-height: 1.1;
+        }
+        .big-emoji-label {
+            font-size: 22px;
+            color: #888;
+            margin-top: 6px;
+            font-family: 'Jua', sans-serif;
+        }
+        .speak-btn {
+            background: none; border: none; font-size: 24px; cursor: pointer;
+            vertical-align: middle; padding: 0 4px;
+            animation: speakPulse 0.3s ease;
+        }
+        @keyframes speakPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
         }
 
         @media (max-width: 380px) {
@@ -250,6 +302,8 @@
     <div class="word-display">
         <span class="category-tag" id="category"></span>
         <span id="word-label" style="font-size:24px; margin-left:8px; color:#555;"></span>
+        <span id="word-image" class="word-image"></span>
+        <button class="speak-btn" id="speak-btn" onclick="speakWord(currentWord)" title="다시 듣기" style="display:none;">🔊</button>
     </div>
 
     <div class="sticker-bar" id="sticker-bar">
@@ -261,9 +315,15 @@
     <p class="stroke-guide-label">획순 가이드 ✍️</p>
     <div class="stroke-guide" id="stroke-guide"></div>
 
-    <div class="canvas-wrap" id="canvas-wrap">
-        <canvas id="trace-canvas"></canvas>
-        <canvas id="draw-canvas"></canvas>
+    <div class="canvas-area">
+        <div class="canvas-wrap" id="canvas-wrap">
+            <canvas id="trace-canvas"></canvas>
+            <canvas id="draw-canvas"></canvas>
+        </div>
+        <div class="big-emoji-box" id="big-emoji-box">
+            <span class="big-emoji" id="big-emoji"></span>
+            <span class="big-emoji-label" id="big-emoji-label"></span>
+        </div>
     </div>
 
     <div class="encourage" id="encourage"></div>
@@ -287,6 +347,186 @@
             setTimeout(() => playTone(1047, 0.25, 'triangle', 0.15), 300);
         }
         function playStickerSound() { playTone(880, 0.08, 'sine', 0.12); setTimeout(() => playTone(1318, 0.12, 'triangle', 0.1), 80); }
+
+        // ============ TTS (Text-to-Speech) ============
+        let ttsReady = false;
+        let koreanVoice = null;
+
+        function initTTS() {
+            if (!('speechSynthesis' in window)) return;
+            function findVoice() {
+                const voices = speechSynthesis.getVoices();
+                // Prefer Korean female voice
+                koreanVoice = voices.find(v => v.lang.startsWith('ko') && /female|여|yuna|sunhi/i.test(v.name))
+                    || voices.find(v => v.lang.startsWith('ko'))
+                    || null;
+                if (voices.length > 0) ttsReady = true;
+            }
+            speechSynthesis.onvoiceschanged = findVoice;
+            findVoice();
+        }
+
+        function speakWord(word) {
+            if (!('speechSynthesis' in window) || !word) return;
+            speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(word);
+            utter.lang = 'ko-KR';
+            utter.rate = 0.85;
+            utter.pitch = 1.15;
+            if (koreanVoice) utter.voice = koreanVoice;
+            speechSynthesis.speak(utter);
+        }
+
+        initTTS();
+
+        // ============ Word Emoji Mapping ============
+        const WORD_EMOJI = {
+            // 동물
+            '강아지':'🐕','고양이':'🐱','토끼':'🐰','곰':'🐻','사자':'🦁',
+            '호랑이':'🐯','코끼리':'🐘','기린':'🦒','원숭이':'🐵','펭귄':'🐧',
+            '다람쥐':'🐿️','돌고래':'🐬','나비':'🦋','개구리':'🐸','거북이':'🐢',
+            '공룡':'🦕','병아리':'🐤','오리':'🦆','닭':'🐔','소':'🐄',
+            '말':'🐴','돼지':'🐷','양':'🐑','염소':'🐐','사슴':'🦌',
+            '여우':'🦊','늑대':'🐺','참새':'🐦','앵무새':'🦜','햄스터':'🐹',
+            '고래':'🐋','상어':'🦈','문어':'🐙','오징어':'🦑','게':'🦀',
+            '새우':'🦐','조개':'🐚','해마':'🐡','잠자리':'🪰','매미':'🦗',
+            '메뚜기':'🦗','달팽이':'🐌','두더지':'🐹','수달':'🦦','판다':'🐼',
+            '코알라':'🐨','캥거루':'🦘','하마':'🦛','악어':'🐊','독수리':'🦅',
+            '부엉이':'🦉','까치':'🐦','비둘기':'🕊️','제비':'🐦','갈매기':'🐦',
+            '물개':'🦭','낙타':'🐫','얼룩말':'🦓','치타':'🐆','표범':'🐆',
+            '물소':'🐃','코뿔소':'🦏','두루미':'🐦','황새':'🐦','올빼미':'🦉',
+            '타조':'🐦','공작새':'🦚','범고래':'🐋','해파리':'🪼','가재':'🦞',
+            '조랑말':'🐴','망아지':'🐴','송아지':'🐄','새끼양':'🐑',
+            '미어캣':'🐿️','도마뱀':'🦎','뱀':'🐍','지렁이':'🪱','꿀벌':'🐝',
+            '개미':'🐜','거미':'🕷️','풍뎅이':'🪲','나방':'🦋',
+            '잉어':'🐟','금붕어':'🐠','열대어':'🐠',
+            '족제비':'🦡','오소리':'🦡','너구리':'🦝','박쥐':'🦇',
+            '두꺼비':'🐸','자라':'🐢','매':'🦅','백로':'🦢','꿩':'🐦',
+            '까마귀':'🐦','거위':'🦢','백조':'🦢','칠면조':'🦃','기러기':'🐦',
+            '홍학':'🦩','붕어':'🐟','메기':'🐟','장어':'🐍','복어':'🐡',
+            '송어':'🐟','농어':'🐟','연어':'🐟','참치':'🐟','광어':'🐟',
+            '넙치':'🐟','방어':'🐟','쥐':'🐭','생쥐':'🐭','멸치':'🐟',
+            '대구':'🐟','멧돼지':'🐗','산양':'🐐',
+            '재규어':'🐆','퓨마':'🐆','보노보':'🐵','비버':'🦫','콘도르':'🦅',
+            '살쾡이':'🐱','비단뱀':'🐍','구렁이':'🐍','왕뱀':'🐍',
+            '멧토끼':'🐰','산토끼':'🐰','들소':'🐃','가젤':'🦌',
+            '자칼':'🐺','오카피':'🦒','들개':'🐕','수리':'🦅','야생마':'🐴',
+            '독사':'🐍','살모사':'🐍','들쥐':'🐭',
+            '침팬지':'🐵','고릴라':'🦍','라마':'🦙','담비':'🦡',
+            '도롱뇽':'🦎','솔개':'🦅','노루':'🦌',
+            // 과일
+            '사과':'🍎','바나나':'🍌','딸기':'🍓','수박':'🍉','포도':'🍇',
+            '감':'🍊','배':'🍐','귤':'🍊','복숭아':'🍑','메론':'🍈',
+            '망고':'🥭','키위':'🥝','체리':'🍒','자두':'🍑','살구':'🍑',
+            '레몬':'🍋','라임':'🍋','참외':'🍈','앵두':'🍒','매실':'🫒',
+            '유자':'🍋','석류':'🫐','무화과':'🫐','대추':'🫘','밤':'🌰',
+            '호두':'🌰','잣':'🌰','리치':'🍈','용과':'🍈','두리안':'🍈',
+            '구아바':'🍈','올리브':'🫒','한라봉':'🍊','청포도':'🍇','머루':'🍇',
+            '다래':'🥝','산딸기':'🍓','오디':'🫐','복분자':'🫐','파파야':'🍈',
+            '코코넛':'🥥','자몽':'🍊','오렌지':'🍊','금귤':'🍊','곶감':'🍊',
+            '감귤':'🍊','천도':'🍑','백도':'🍑','황도':'🍑','홍시':'🍊',
+            '대봉':'🍊','천혜향':'🍊','탱자':'🍊','레드향':'🍊','청사과':'🍏',
+            '잔딸기':'🍓',
+            // 음식
+            '밥':'🍚','김치':'🥬','떡볶이':'🍢','우유':'🥛','빵':'🍞',
+            '과자':'🍪','아이스크림':'🍦','치킨':'🍗','피자':'🍕','라면':'🍜',
+            '김밥':'🍙','떡':'🍡','만두':'🥟','국':'🍲','볶음밥':'🍳',
+            '비빔밥':'🍚','불고기':'🥩','갈비':'🍖','삼겹살':'🥓',
+            '햄버거':'🍔','핫도그':'🌭','샌드위치':'🥪','케이크':'🎂','쿠키':'🍪',
+            '초콜릿':'🍫','사탕':'🍬','젤리':'🍭','팝콘':'🍿','도넛':'🍩',
+            '치즈':'🧀','계란':'🥚','감자':'🥔','고구마':'🍠','당근':'🥕',
+            '옥수수':'🌽','토마토':'🍅','브로콜리':'🥦','햄':'🥓','두부':'🧈',
+            '오이':'🥒','버섯':'🍄','양파':'🧅','마늘':'🧄','호박':'🎃',
+            '주스':'🧃','물':'💧','차':'🍵','두유':'🥛',
+            // 자연
+            '해':'☀️','달':'🌙','별':'⭐','꽃':'🌸','나무':'🌳',
+            '산':'⛰️','바다':'🌊','무지개':'🌈','눈':'❄️','구름':'☁️',
+            '비':'🌧️','바람':'🌬️','풀':'🌿','강':'🏞️','호수':'🏞️',
+            '번개':'⚡','천둥':'⚡','안개':'🌫️','이슬':'💧','서리':'❄️',
+            '폭포':'💦','숲':'🌲','섬':'🏝️','모래':'🏖️','파도':'🌊',
+            '조개':'🐚','돌':'🪨','흙':'🟤','연못':'🏞️','아침':'🌅',
+            '낮':'☀️','저녁':'🌆','밤':'🌙','새벽':'🌅','노을':'🌇',
+            '봄':'🌸','여름':'🌻','가을':'🍂','겨울':'⛄','햇살':'☀️',
+            '달빛':'🌕','별빛':'✨','우주':'🚀','지구':'🌍',
+            '동굴':'🕳️','사막':'🏜️','폭포':'💦','들판':'🌾','초원':'🌿',
+            '계곡':'⛰️','하늘':'🌤️','소나기':'🌧️',
+            // 탈것
+            '자동차':'🚗','버스':'🚌','기차':'🚂','비행기':'✈️','배':'🚢',
+            '자전거':'🚲','트럭':'🚛','택시':'🚕','소방차':'🚒','경찰차':'🚓',
+            '구급차':'🚑','로켓':'🚀','헬리콥터':'🚁','보트':'🚤','썰매':'🛷',
+            '드론':'🛸','요트':'⛵',
+            // 가족
+            '엄마':'👩','아빠':'👨','할머니':'👵','할아버지':'👴','누나':'👧',
+            '형':'👦','언니':'👧','오빠':'👦','동생':'👶','아기':'👶',
+            '삼촌':'👨','이모':'👩','고모':'👩','사촌':'🧒','가족':'👨‍👩‍👦',
+            '식구':'👨‍👩‍👦','조카':'🧒','막내':'👶','첫째':'🧒','둘째':'🧒',
+            '형제':'👦','자매':'👧','어른':'🧑',
+            // 사랑
+            '사랑해':'💖','좋아해':'💗','고마워':'🙏','행복해':'😊','기뻐':'😄',
+            '웃자':'😆','힘내':'💪','최고야':'🏆','멋져':'✨','예쁘다':'🌟',
+            '잘했어':'👏','대단해':'🌟','축하해':'🎉','감사해':'🙏','미안해':'🙇',
+            '괜찮아':'👌','파이팅':'💪','짱이야':'👍','용감해':'🦸','착해':'😇',
+            '똑똒해':'🧠','씩씩해':'💪','든든해':'🤗','뿌듯해':'😊','설레':'💓',
+            '신나':'🎵','즐거워':'😁','재밌어':'🤩','따뜻해':'🤗','평화':'☮️',
+            '희망':'🌈','꿈':'💭','소원':'🌠','약속':'🤝','비밀':'🤫',
+            '우정':'🤝','화이팅':'🔥',
+            // 친구
+            '친구':'🧒','단짝':'👫','베프':'👭','짝꿍':'👬','이웃':'🏘️',
+            '동네':'🏘️','소풍':'🧺','생일':'🎂','파티':'🎉','선물':'🎁',
+            '편지':'💌','인사':'👋','안녕':'👋','잘가':'👋','기대':'🤩',
+            '깜짝':'🎊','비밀':'🤫','약속':'🤝',
+            // 색깔
+            '빨강':'🔴','주황':'🟠','노랑':'🟡','초록':'🟢','파랑':'🔵',
+            '보라':'🟣','분홍':'💗','하양':'⬜','검정':'⬛','갈색':'🟤',
+            '연두':'💚','금색':'🥇','은색':'🥈','남색':'🔵','청록':'💎',
+            '자주':'🟣','회색':'🩶',
+            // 몸
+            '머리':'🧠','눈':'👁️','코':'👃','입':'👄','귀':'👂',
+            '손':'✋','발':'🦶','팔':'💪','다리':'🦵','배':'🫄',
+            '등':'🔙','어깨':'💪','무릎':'🦵','이마':'😶','볼':'😊',
+            '턱':'😬','목':'🦒','가슴':'🫁','허리':'🧍','혀':'👅',
+            '손톱':'💅','눈썹':'🤨',
+            // 장소
+            '집':'🏠','학교':'🏫','공원':'🏞️','마트':'🛒','병원':'🏥',
+            '교실':'🏫','부엌':'🍳','거실':'🛋️','침실':'🛏️','옥상':'🏢',
+            '정원':'🌺','골목':'🏘️','시장':'🏪','빵집':'🥖','꽃집':'💐',
+            '서점':'📚','약국':'💊',
+            // 물건
+            '공':'⚽','인형':'🧸','로봇':'🤖','블록':'🧱','책':'📖',
+            '연필':'✏️','가위':'✂️','풀':'📎','종이':'📄','컵':'☕',
+            '접시':'🍽️','모자':'🧢','신발':'👟','양말':'🧦','옷':'👕',
+            '가방':'🎒','우산':'☂️','시계':'⏰','거울':'🪞','빗':'💇',
+            '치약':'🪥','수건':'🧻','비누':'🧼','열쇠':'🔑','지갑':'👛',
+            '안경':'👓','촛불':'🕯️','풍선':'🎈','구슬':'🔮','물감':'🎨',
+            '붓':'🖌️','점토':'🏺',
+            // 날씨
+            '맑음':'☀️','흐림':'☁️','태풍':'🌀','우박':'🧊','한파':'🥶',
+            '황사':'😷','가뭄':'🏜️','홍수':'🌊',
+            // 숫자
+            '하나':'1️⃣','둘':'2️⃣','셋':'3️⃣','넷':'4️⃣','다섯':'5️⃣',
+            '여섯':'6️⃣','일곱':'7️⃣','여덟':'8️⃣','아홉':'9️⃣','열':'🔟',
+            '스물':'🔢','서른':'🔢','마흔':'🔢','쉰':'🔢','예순':'🔢',
+            '일흔':'🔢','여든':'🔢','아흔':'🔢','백':'💯','천':'🔢',
+            // 인사
+            '잘자':'😴','잘가':'👋',
+            // 놀이
+            '그네':'🎠','시소':'🎡','철봉':'🏋️','레고':'🧱','퍼즐':'🧩',
+            // 직업
+            '의사':'👨‍⚕️','화가':'🎨','가수':'🎤','배우':'🎭','농부':'👨‍🌾',
+            '어부':'🎣','목수':'🪚',
+        };
+
+        const CATEGORY_EMOJI = {
+            '동물 🐾':'🐾','과일 🍎':'🍎','가족 👨‍👩‍👦':'👨‍👩‍👦','사랑 💕':'💕',
+            '친구 🧒':'🧒','음식 🍚':'🍚','자연 🌈':'🌈','탈것 🚗':'🚗',
+            '색깔 🎨':'🎨','몸 🖐️':'🖐️','장소 🏠':'🏠','물건 📦':'📦',
+            '날씨 ☀️':'☀️','숫자 🔢':'🔢','인사 👋':'👋','놀이 🎮':'🎮',
+            '직업 👩‍⚕️':'👩‍⚕️',
+        };
+
+        function getWordEmoji(word, category) {
+            return WORD_EMOJI[word] || CATEGORY_EMOJI[category] || '📝';
+        }
 
         // ============ Heart Explosion ============
         function spawnHeartExplosion(x, y, count) {
@@ -373,6 +613,21 @@
                 '범고래','해파리','불가사리','가재','랍스터','조랑말','망아지','송아지','강아지','새끼양',
                 '미어캣','카멜레온','이구아나','도마뱀','뱀','지렁이','무당벌레','꿀벌','개미','거미',
                 '사마귀','반딧불이','귀뚜라미','풍뎅이','딱정벌레','나방','잉어','금붕어','열대어','해마',
+                '족제비','오소리','너구리','청설모','노루','라마','담비','침팬지','고릴라','박쥐',
+                '두꺼비','도롱뇽','자라','매','솔개','백로','꿩','뻐꾸기','종달새','까마귀',
+                '거위','백조','칠면조','기러기','맹꽁이','왜가리','따오기','홍학','도요새','갈치',
+                '붕어','메기','장어','복어','송어','농어','연어','참치','광어','넙치',
+                '방어','쥐','생쥐','파리','모기','멸치','꽁치','대구','산양','멧돼지',
+                '재규어','퓨마','보노보','맥','투칸','앵무','비버','콘도르','살쾡이','비단뱀',
+                '구렁이','왕뱀','멧토끼','산토끼','들소','영양','가젤','누','자칼','망구스',
+                '천산갑','오카피','임팔라','오셀롯','들개','수리','야생마','독사','살모사','들쥐',
+            ],
+            '과일 🍎': [
+                '참외','앵두','매실','유자','석류','무화과','비파','모과','대추','밤',
+                '호두','잣','리치','용과','두리안','구아바','올리브','한라봉','청포도','머루',
+                '다래','산딸기','오디','복분자','파파야','코코넛','자몽','오렌지','금귤','곶감',
+                '감귤','천도','람부탄','백도','황도','홍시','대봉','건포도','천혜향','은행',
+                '넥타린','탱자','레드향','부사','홍옥','아몬드','캐슈넛','피칸','청사과','잔딸기',
             ],
             '가족 👨‍👩‍👦': [
                 '엄마','아빠','할머니','할아버지','누나','형','언니','오빠','동생','아기',
@@ -460,13 +715,15 @@
             ],
         };
 
-        // Flatten for random access
+        // Flatten for random access (2글자 이하만)
         let allWords = [];
         let allCategories = [];
         Object.keys(WORDS).forEach(cat => {
             WORDS[cat].forEach(w => {
-                allWords.push(w);
-                allCategories.push(cat);
+                if (w.length <= 2) {
+                    allWords.push(w);
+                    allCategories.push(cat);
+                }
             });
         });
 
@@ -548,7 +805,7 @@
         function drawStrokeGuide(word) {
             const guide = document.getElementById('stroke-guide');
             guide.innerHTML = '';
-            const boxSize = 40;
+            const boxSize = 70;
 
             for (let ci = 0; ci < word.length; ci++) {
                 const d = decomposeHangul(word[ci]);
@@ -573,7 +830,7 @@
                     const color = JAMO_COLORS[p.type];
 
                     // Draw jamo character lightly
-                    ctx.font = `bold 22px 'Jua', sans-serif`;
+                    ctx.font = `bold 38px 'Jua', sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillStyle = 'rgba(0,0,0,0.08)';
@@ -588,26 +845,26 @@
                             ctx.beginPath();
                             ctx.arc(boxSize/2, boxSize/2, boxSize*0.28, 0, Math.PI*1.8);
                             ctx.strokeStyle = color;
-                            ctx.lineWidth = 2;
+                            ctx.lineWidth = 3.5;
                             ctx.stroke();
                             // Arrow at end
                             const endAngle = Math.PI*1.8;
                             const r = boxSize*0.28;
                             const ex = boxSize/2 + Math.cos(endAngle)*r;
                             const ey = boxSize/2 + Math.sin(endAngle)*r;
-                            drawMiniArrowhead(ctx, boxSize/2 + Math.cos(endAngle-0.3)*r, boxSize/2 + Math.sin(endAngle-0.3)*r, ex, ey, color, 5);
+                            drawMiniArrowhead(ctx, boxSize/2 + Math.cos(endAngle-0.3)*r, boxSize/2 + Math.sin(endAngle-0.3)*r, ex, ey, color, 9);
                             // Number
                             ctx.fillStyle = color;
-                            ctx.font = 'bold 10px sans-serif';
+                            ctx.font = 'bold 16px sans-serif';
                             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                             ctx.fillText('①', boxSize/2, boxSize*0.15);
                         } else if (p.jamo === 'ㅎ') {
                             // dot, line, circle
                             // Dot
                             ctx.beginPath();
-                            ctx.arc(boxSize*0.5, boxSize*0.12, 3, 0, Math.PI*2);
+                            ctx.arc(boxSize*0.5, boxSize*0.12, 5, 0, Math.PI*2);
                             ctx.fillStyle = color; ctx.fill();
-                            ctx.fillStyle = color; ctx.font = 'bold 8px sans-serif';
+                            ctx.fillStyle = color; ctx.font = 'bold 14px sans-serif';
                             ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
                             ctx.fillText('①', boxSize*0.6, boxSize*0.12);
                             // Line
@@ -615,16 +872,16 @@
                             // Circle
                             ctx.beginPath();
                             ctx.arc(boxSize/2, boxSize*0.72, boxSize*0.18, 0, Math.PI*1.8);
-                            ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
-                            ctx.fillStyle = color; ctx.font = 'bold 8px sans-serif';
+                            ctx.strokeStyle = color; ctx.lineWidth = 3.5; ctx.stroke();
+                            ctx.fillStyle = color; ctx.font = 'bold 14px sans-serif';
                             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                             ctx.fillText('③', boxSize*0.5, boxSize*0.56);
                         } else if (p.jamo === 'ㅊ') {
                             // dot, line, two legs
                             ctx.beginPath();
-                            ctx.arc(boxSize*0.5, boxSize*0.12, 3, 0, Math.PI*2);
+                            ctx.arc(boxSize*0.5, boxSize*0.12, 5, 0, Math.PI*2);
                             ctx.fillStyle = color; ctx.fill();
-                            ctx.fillStyle = color; ctx.font = 'bold 8px sans-serif';
+                            ctx.fillStyle = color; ctx.font = 'bold 14px sans-serif';
                             ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
                             ctx.fillText('①', boxSize*0.6, boxSize*0.12);
                             for (let si = 1; si < strokes.length; si++) {
@@ -651,21 +908,21 @@
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
             ctx.strokeStyle = color;
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 3.5;
             ctx.lineCap = 'round';
             ctx.stroke();
 
             // Arrowhead
-            drawMiniArrowhead(ctx, x1, y1, x2, y2, color, 5);
+            drawMiniArrowhead(ctx, x1, y1, x2, y2, color, 9);
 
             // Number at start
             ctx.fillStyle = color;
-            ctx.font = 'bold 8px sans-serif';
+            ctx.font = 'bold 14px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             const dx = x2-x1, dy = y2-y1;
             const len = Math.sqrt(dx*dx+dy*dy) || 1;
-            const ox = -dy/len * 7, oy = dx/len * 7;
+            const ox = -dy/len * 11, oy = dx/len * 11;
             ctx.fillText(numChar, x1 + ox, y1 + oy);
         }
 
@@ -765,12 +1022,13 @@
             traceCtx.restore();
 
             // Create trace pixel map for hit detection
+            // alpha > 128 = only the dark dotted strokes, not the light interior fill
             const imageData = traceCtx.getImageData(0, 0, cw, ch);
             tracePixels = new Uint8Array(cw * ch);
             totalTracePixels = 0;
             for (let i = 0; i < cw * ch; i++) {
                 const a = imageData.data[i * 4 + 3];
-                if (a > 20) {
+                if (a > 128) {
                     tracePixels[i] = 1;
                     totalTracePixels++;
                 }
@@ -829,15 +1087,16 @@
         }
 
         function checkHit(x, y) {
-            const radius = 8;
+            const radius = 6;
             const ix = Math.round(x), iy = Math.round(y);
             for (let dy = -radius; dy <= radius; dy++) {
                 for (let dx = -radius; dx <= radius; dx++) {
+                    if (dx*dx + dy*dy > radius*radius) continue;
                     const px = ix + dx, py = iy + dy;
                     if (px < 0 || px >= cw || py < 0 || py >= ch) continue;
                     const idx = py * cw + px;
                     if (tracePixels[idx] === 1) {
-                        tracePixels[idx] = 2; // marked as hit
+                        tracePixels[idx] = 2;
                         hitCount++;
                     }
                 }
@@ -847,10 +1106,10 @@
 
         function updateProgress() {
             if (totalTracePixels === 0) return;
-            const pct = Math.min(100, (hitCount / totalTracePixels) * 100 * 1.8); // 1.8x multiplier for easier completion
+            const pct = Math.min(100, (hitCount / totalTracePixels) * 100);
             document.getElementById('progress-fill').style.width = pct + '%';
 
-            if (pct >= 85 && !completed) {
+            if (pct >= 80 && !completed) {
                 completed = true;
                 totalWords++;
                 document.getElementById('progress-fill').style.width = '100%';
@@ -884,6 +1143,29 @@
 
             document.getElementById('category').textContent = currentCat;
             document.getElementById('word-label').textContent = currentWord;
+
+            // Show emoji image
+            const emoji = getWordEmoji(currentWord, currentCat);
+            const imgEl = document.getElementById('word-image');
+            imgEl.textContent = emoji;
+            imgEl.style.display = 'inline-block';
+
+            // Show big emoji next to canvas
+            const bigBox = document.getElementById('big-emoji-box');
+            const bigEmoji = document.getElementById('big-emoji');
+            const bigLabel = document.getElementById('big-emoji-label');
+            bigEmoji.textContent = emoji;
+            bigLabel.textContent = currentWord;
+            bigBox.classList.add('show');
+            bigBox.style.animation = 'none';
+            void bigBox.offsetHeight;
+            bigBox.style.animation = '';
+
+            // Show speak button
+            document.getElementById('speak-btn').style.display = 'inline-block';
+
+            // Read word aloud
+            setTimeout(() => speakWord(currentWord), 300);
 
             drawDottedWord(currentWord);
             drawStrokeGuide(currentWord);
