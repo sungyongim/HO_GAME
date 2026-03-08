@@ -1030,8 +1030,12 @@
         let drawing = false;
         let lastX, lastY;
         let tracePixels = null;
+        let fillMask = null; // 글자 내부 채움 마스크
+        let filledTrack = null; // 채워진 픽셀 추적
         let hitCount = 0;
         let totalTracePixels = 0;
+        let currentFontSize = 0;
+        let fillCanvas, fillCtx;
         let completed = false;
         let encouraged = false;
         let soundCounter = 0;
@@ -1106,19 +1110,45 @@
 
             traceCtx.restore();
 
-            // Create trace pixel map for hit detection
-            // alpha > 80 = outline strokes + dotted strokes, not the light fill (alpha ~64)
+            currentFontSize = fontSize;
+
+            // 글자 내부 채움 마스크 생성 (자동 채움용)
+            if (!fillCanvas) {
+                fillCanvas = document.createElement('canvas');
+                fillCtx = fillCanvas.getContext('2d');
+            }
+            fillCanvas.width = cw;
+            fillCanvas.height = ch;
+            fillCtx.clearRect(0, 0, cw, ch);
+            fillCtx.font = `${fontSize}px 'Jua', sans-serif`;
+            fillCtx.textAlign = 'center';
+            fillCtx.textBaseline = 'middle';
+            fillCtx.fillStyle = '#000';
+            fillCtx.fillText(word, cx, cy);
+            // 채움 마스크: 글자 내부 영역
+            const fillData = fillCtx.getImageData(0, 0, cw, ch);
+            fillMask = new Uint8Array(cw * ch);
+            for (let i = 0; i < cw * ch; i++) {
+                if (fillData.data[i * 4 + 3] > 30) fillMask[i] = 1;
+            }
+
+            // 진행률: fillMask(글자 내부 전체)를 기준으로 추적
+            // 점선 감지용 tracePixels는 autoFill 근처 판단에만 사용
             const imageData = traceCtx.getImageData(0, 0, cw, ch);
             tracePixels = new Uint8Array(cw * ch);
-            totalTracePixels = 0;
             for (let i = 0; i < cw * ch; i++) {
                 const a = imageData.data[i * 4 + 3];
                 if (a > 80) {
                     tracePixels[i] = 1;
-                    totalTracePixels++;
                 }
             }
+            // fillMask 기반 진행률 추적
+            totalTracePixels = 0;
+            for (let i = 0; i < cw * ch; i++) {
+                if (fillMask[i] === 1) totalTracePixels++;
+            }
             hitCount = 0;
+            filledTrack = new Uint8Array(cw * ch);
         }
 
         // ============ Drawing ============
@@ -1136,19 +1166,78 @@
             checkHit(p.x, p.y);
         }
 
+        // 점선 근처에 그릴 때 글자 내부를 자동 채움
+        function autoFillAt(x, y) {
+            if (!fillMask) return;
+            const r = 20; // 자동 채움 반경
+            const ix = Math.round(x), iy = Math.round(y);
+            // 이 위치가 글자 근처인지 확인
+            let nearTrace = false;
+            for (let dy = -8; dy <= 8; dy += 4) {
+                for (let dx = -8; dx <= 8; dx += 4) {
+                    const px = ix + dx, py = iy + dy;
+                    if (px >= 0 && px < cw && py >= 0 && py < ch) {
+                        if (tracePixels[py * cw + px] >= 1) { nearTrace = true; break; }
+                    }
+                }
+                if (nearTrace) break;
+            }
+            if (!nearTrace) return;
+
+            // 글자 내부를 원형으로 채우기
+            drawCtx.save();
+            drawCtx.beginPath();
+            drawCtx.arc(x, y, r, 0, Math.PI * 2);
+            drawCtx.clip();
+
+            // fillMask 영역만 penColor로 채움
+            const imgData = drawCtx.getImageData(
+                Math.max(0, ix - r), Math.max(0, iy - r),
+                Math.min(r * 2, cw - Math.max(0, ix - r)),
+                Math.min(r * 2, ch - Math.max(0, iy - r))
+            );
+            const startX = Math.max(0, ix - r), startY = Math.max(0, iy - r);
+            const w = imgData.width, h = imgData.height;
+
+            // Parse pen color
+            const tc = document.createElement('canvas').getContext('2d');
+            tc.fillStyle = penColor;
+            tc.fillRect(0, 0, 1, 1);
+            const pc = tc.getImageData(0, 0, 1, 1).data;
+
+            for (let py = 0; py < h; py++) {
+                for (let px = 0; px < w; px++) {
+                    const gx = startX + px, gy = startY + py;
+                    const ddx = gx - ix, ddy = gy - iy;
+                    if (ddx * ddx + ddy * ddy > r * r) continue;
+                    if (gx < 0 || gx >= cw || gy < 0 || gy >= ch) continue;
+                    if (fillMask[gy * cw + gx] === 1) {
+                        const idx = (py * w + px) * 4;
+                        imgData.data[idx] = pc[0];
+                        imgData.data[idx + 1] = pc[1];
+                        imgData.data[idx + 2] = pc[2];
+                        imgData.data[idx + 3] = 255;
+                        // 진행률 추적: 새로 채워진 픽셀 카운트
+                        const fidx = gy * cw + gx;
+                        if (filledTrack && filledTrack[fidx] === 0) {
+                            filledTrack[fidx] = 1;
+                            hitCount++;
+                        }
+                    }
+                }
+            }
+            drawCtx.putImageData(imgData, startX, startY);
+            drawCtx.restore();
+            updateProgress();
+        }
+
         function doDraw(e) {
             e.preventDefault();
             if (!drawing) return;
             const p = getPos(e);
 
-            drawCtx.beginPath();
-            drawCtx.moveTo(lastX, lastY);
-            drawCtx.lineTo(p.x, p.y);
-            drawCtx.strokeStyle = penColor;
-            drawCtx.lineWidth = 14;
-            drawCtx.lineCap = 'round';
-            drawCtx.lineJoin = 'round';
-            drawCtx.stroke();
+            // 자동 채움 (점선 근처일 때 글자 내부 채움)
+            autoFillAt(p.x, p.y);
 
             // Check hits along the line
             const dx = p.x - lastX, dy = p.y - lastY;
@@ -1179,8 +1268,9 @@
                     const px = ix + dx, py = iy + dy;
                     if (px < 0 || px >= cw || py < 0 || py >= ch) continue;
                     const idx = py * cw + px;
-                    if (tracePixels[idx] === 1) {
-                        tracePixels[idx] = 2;
+                    // fillMask 기반 진행률 추적
+                    if (filledTrack && fillMask[idx] === 1 && filledTrack[idx] === 0) {
+                        filledTrack[idx] = 1;
                         hitCount++;
                     }
                 }
@@ -1239,9 +1329,7 @@
             drawCtx.clearRect(0, 0, cw, ch);
             if (!completed) {
                 // Reset hit tracking
-                for (let i = 0; i < cw * ch; i++) {
-                    if (tracePixels[i] === 2) tracePixels[i] = 1;
-                }
+                if (filledTrack) filledTrack = new Uint8Array(cw * ch);
                 hitCount = 0;
                 updateProgress();
             }
