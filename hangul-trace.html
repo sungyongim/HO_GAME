@@ -413,46 +413,77 @@
             if (!('speechSynthesis' in window)) return;
             function findVoice() {
                 const voices = speechSynthesis.getVoices();
-                const koVoices = voices.filter(v => v.lang === 'ko-KR' || v.lang === 'ko_KR' || v.lang.startsWith('ko'));
+                // 모든 한국어 음성 수집
+                const koVoices = voices.filter(v =>
+                    v.lang === 'ko-KR' || v.lang === 'ko_KR' ||
+                    v.lang === 'ko' || v.lang.startsWith('ko-') || v.lang.startsWith('ko_')
+                );
 
-                // iPadOS/iOS: Yuna(여성), macOS: Yuna(여성), Android: 여성 음성 우선
-                // 여성 음성 이름 패턴 (남성 제외)
-                const femaleNames = /yuna|sunhi|sora|jian|female|여성|여자/i;
-                const maleNames = /minsu|jihun|male|남성|남자/i;
+                // 디버그: 모든 한국어 음성 출력
+                console.log('=== 모든 한국어 음성 ===');
+                koVoices.forEach((v, i) => {
+                    console.log(i + ': name=' + v.name + ', lang=' + v.lang + ', uri=' + v.voiceURI);
+                });
 
-                // 1순위: 명확한 여성 음성
-                koreanVoice = koVoices.find(v => femaleNames.test(v.name))
-                    // 2순위: 남성이 아닌 음성
-                    || koVoices.find(v => !maleNames.test(v.name))
-                    // 3순위: 아무 한국어 음성
+                // 유나(Yuna) 음성을 최우선으로 찾기
+                // iPadOS에서 voiceURI나 name에 다양한 형태로 들어갈 수 있음
+                const yunaVoice = koVoices.find(v =>
+                    /yuna|유나/i.test(v.name) || /yuna|유나/i.test(v.voiceURI)
+                );
+
+                // 여성 음성 패턴
+                const femaleVoice = koVoices.find(v =>
+                    /sunhi|sora|jian|소라|선히|지안|female|여성|여자/i.test(v.name) ||
+                    /sunhi|sora|jian|소라|선히|지안|female|여성|여자/i.test(v.voiceURI)
+                );
+
+                // 남성 음성 패턴 (제외용)
+                const isMale = (v) =>
+                    /minsu|민수|jihun|지훈|male|남성|남자/i.test(v.name) ||
+                    /minsu|민수|jihun|지훈|male|남성|남자/i.test(v.voiceURI);
+
+                // 우선순위: 유나 > 다른 여성 > 남성 아닌 음성 > 아무거나
+                koreanVoice = yunaVoice
+                    || femaleVoice
+                    || koVoices.find(v => !isMale(v))
                     || koVoices[0]
                     || null;
 
                 if (voices.length > 0) ttsReady = true;
-
-                // 디버그: 사용 가능한 한국어 음성 로그
-                if (koVoices.length > 0) {
-                    console.log('Korean voices:', koVoices.map(v => v.name + ' (' + v.lang + ')').join(', '));
-                    console.log('Selected:', koreanVoice ? koreanVoice.name : 'none');
-                }
+                console.log('선택된 음성:', koreanVoice ? koreanVoice.name + ' (' + koreanVoice.voiceURI + ')' : 'none');
             }
             speechSynthesis.onvoiceschanged = findVoice;
             findVoice();
             // iOS/iPadOS에서 음성 로딩이 느릴 수 있으므로 재시도
-            setTimeout(findVoice, 500);
-            setTimeout(findVoice, 1500);
+            setTimeout(findVoice, 300);
+            setTimeout(findVoice, 1000);
+            setTimeout(findVoice, 3000);
         }
 
         function speakWord(word) {
             if (!('speechSynthesis' in window) || !word) return;
             speechSynthesis.cancel();
-            const utter = new SpeechSynthesisUtterance(word);
-            utter.lang = 'ko-KR';
-            utter.rate = 0.85;
-            utter.pitch = 1.3;  // 더 높은 피치로 부드러운 느낌
-            utter.volume = 1.0;
-            if (koreanVoice) utter.voice = koreanVoice;
-            speechSynthesis.speak(utter);
+
+            // iOS Safari에서는 cancel 후 약간의 딜레이 필요
+            setTimeout(() => {
+                const utter = new SpeechSynthesisUtterance(word);
+                utter.lang = 'ko-KR';
+                utter.rate = 0.8;
+                utter.pitch = 1.3;
+                utter.volume = 1.0;
+
+                // 매번 음성을 다시 확인 (iOS에서 동적으로 바뀔 수 있음)
+                if (!koreanVoice) {
+                    const voices = speechSynthesis.getVoices();
+                    const koVoices = voices.filter(v => v.lang === 'ko-KR' || v.lang.startsWith('ko'));
+                    koreanVoice = koVoices.find(v => /yuna|유나/i.test(v.name) || /yuna|유나/i.test(v.voiceURI))
+                        || koVoices.find(v => !/minsu|민수|jihun|지훈|male|남성/i.test(v.name))
+                        || koVoices[0] || null;
+                }
+
+                if (koreanVoice) utter.voice = koreanVoice;
+                speechSynthesis.speak(utter);
+            }, 50);
         }
 
         initTTS();
