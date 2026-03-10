@@ -91,10 +91,10 @@
         .tool-btn.primary { background: #e8783a; color: white; }
 
         .pen-colors {
-            display: flex; gap: 5px; align-items: center;
+            display: flex; gap: 4px; align-items: center; flex-wrap: wrap;
         }
         .pen-dot {
-            width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+            width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
             border: 3px solid transparent; transition: all 0.15s;
         }
         .pen-dot.active { border-color: #333; transform: scale(1.2); }
@@ -1332,7 +1332,7 @@
         let stepTotalCount = 0;
         let traceImageData = null;
 
-        const PEN_COLORS = ['#e8783a','#e74c3c','#3498db','#2ecc71','#9b59b6','#333333'];
+        const PEN_COLORS = ['#FF0000','#FF4500','#FF8C00','#FFD700','#FFFF00','#7CFC00','#00C853','#00BCD4','#2196F3','#3F51B5','#7B1FA2','#E91E63'];
 
         function initCanvases() {
             const isTablet = window.innerWidth >= 700;
